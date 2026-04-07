@@ -12,6 +12,8 @@ export function handleDataReport(socket: net.Socket, packet: ParsedPacket): void
     connectionState: 'logged-in'
   });
 
+  logger.info({ deviceId: packet.deviceId, payloadLen: packet.payload.length, hex: packet.payload.toString('hex') }, 'Raw data report arrived');
+
   const tags = parseDataPayload(packet.payload);
   if (tags.length > 0) {
     logger.info({ deviceId: packet.deviceId, tagCount: tags.length }, 'Data report received');

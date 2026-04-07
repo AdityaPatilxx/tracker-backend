@@ -1,4 +1,5 @@
 import { TagRecord } from './types';
+import { logger } from '../utils/logger';
 
 // The timestamp offset is from year 2000
 function parseDeviceTime(buf: Buffer): Date {
@@ -47,6 +48,7 @@ export function parseTagRecord(value: Buffer, tlvType: number): TagRecord | null
     sum += value[i];
   }
   if ((sum & 0xFF) !== 0) {
+    logger.warn({ hex: value.toString('hex'), sum }, 'Dropped tag record due to hardware checksum mismatch');
     return null; // Silent drop on hardware corruption
   }
   
