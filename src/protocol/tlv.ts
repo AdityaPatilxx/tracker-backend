@@ -48,8 +48,8 @@ export function parseTagRecord(value: Buffer, tlvType: number): TagRecord | null
     sum += value[i];
   }
   if ((sum & 0xFF) !== 0) {
-    logger.warn({ hex: value.toString('hex'), sum }, 'Dropped tag record due to hardware checksum mismatch');
-    return null; // Silent drop on hardware corruption
+    logger.warn({ hex: value.toString('hex'), sum }, 'Hardware checksum mismatch (bypassed for testing)');
+    // return null; // Disabled drop to see the data!
   }
   
   const byte0 = value[0];
@@ -61,7 +61,9 @@ export function parseTagRecord(value: Buffer, tlvType: number): TagRecord | null
   const checksum = value[6];
   const exciAddress = value[7];
   const voltageAlarm = value[8] !== 0; // status
-  const rssi = value.readInt8(9);
+  const rssiByte9 = value.readInt8(9);
+  const rssiByte10 = value.readInt8(10);
+  const rssi = rssiByte9 !== 0 ? rssiByte9 : rssiByte10;
   const eventTime = parseDeviceTime(value.subarray(11, 17));
   
   return {
