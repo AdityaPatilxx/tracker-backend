@@ -11,8 +11,7 @@ function requireEnv(key: string, fallback?: string): string {
 
 export const config = {
   tcp: {
-    lbPort:     parseInt(requireEnv('TCP_LB_PORT', '4900')),
-    loadPort:   parseInt(requireEnv('TCP_LOAD_PORT', '4901')),
+    port:       parseInt(requireEnv('TCP_PORT', '4600')),
     serverHost: requireEnv('SERVER_HOST', '127.0.0.1'),
   },
   api: {

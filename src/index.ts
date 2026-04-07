@@ -33,18 +33,14 @@ async function main(): Promise<void> {
   logger.info('  Active Reader Backend — Starting up');
   logger.info('═══════════════════════════════════════════');
   logger.info({ config: {
-    tcpLbPort:   config.tcp.lbPort,
-    tcpLoadPort: config.tcp.loadPort,
+    tcpPort:     config.tcp.port,
     apiPort:     config.api.port,
     logLevel:    config.logging.level,
   }}, 'Configuration loaded');
 
   // Each module will be wired in here as iterations progress:
   // await connectDb();
-  startTcpServer(config.tcp.lbPort);
-  if (config.tcp.lbPort !== config.tcp.loadPort) {
-    startTcpServer(config.tcp.loadPort);
-  }
+  startTcpServer(config.tcp.port);
   // startApiServer();
 
   logger.info('Bootstrap complete — ready for connections');

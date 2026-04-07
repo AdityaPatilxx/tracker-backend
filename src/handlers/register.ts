@@ -32,10 +32,10 @@ export function handleRegister(socket: net.Socket, packet: ParsedPacket): void {
     ip = socket.localAddress.replace('::ffff:', '');
   }
   payload.write(ip, 7, 32, 'ascii');
-  payload.writeUInt16LE(config.tcp.loadPort, 39);
+  payload.writeUInt16LE(config.tcp.port, 39);
 
   const response = buildResponse(RES.REGISTER, packet.deviceId, payload, packet.seq, packet.version, packet.secFlag);
   
   socket.write(response);
-  logger.debug({ deviceId: packet.deviceId, ip, port: config.tcp.loadPort }, 'Sent 0x8008 registration response');
+  logger.debug({ deviceId: packet.deviceId, ip, port: config.tcp.port }, 'Sent 0x8008 registration response');
 }
