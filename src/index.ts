@@ -42,6 +42,9 @@ async function main(): Promise<void> {
   // Each module will be wired in here as iterations progress:
   // await connectDb();
   startTcpServer(config.tcp.lbPort);
+  if (config.tcp.lbPort !== config.tcp.loadPort) {
+    startTcpServer(config.tcp.loadPort);
+  }
   // startApiServer();
 
   logger.info('Bootstrap complete — ready for connections');
