@@ -43,13 +43,24 @@ export function parseDataPayload(payload: Buffer): TagRecord[] {
 export function parseTagRecord(value: Buffer, tlvType: number): TagRecord | null {
   // Checksum validation: ~sum + 1 logic applies to bytes 0..16
   // Practically, a valid checksum means the sum modulus 256 is 0
+  // Section 10.2: Tag Data Checksum Algorithm
+  // Checksum is the 2's complement of the sum of (1-byte TagType + 4-byte TagID)
+  // This lives precisely in bytes 1 through 5.
   let sum = 0;
-  for (let i = 0; i < 17; i++) {
+  for (let i = 1; i <= 5; i++) {
     sum += value[i];
   }
-  if ((sum & 0xFF) !== 0) {
-    logger.warn({ hex: value.toString('hex'), sum }, 'Hardware checksum mismatch (bypassed for testing)');
-    // return null; // Disabled drop to see the data!
+  
+  const expectedChecksum = ((~sum) + 1) & 0xFF;
+  const actualChecksum = value[6];
+
+  if (actualChecksum !== expectedChecksum) {
+    logger.warn({
+      hex: value.toString('hex'), 
+      expected: expectedChecksum.toString(16), 
+      actual: actualChecksum.toString(16)
+    }, 'Dropped tag record due to isolated TagID checksum mismatch');
+    return null; // Hardware corruption drop
   }
   
   const byte0 = value[0];
