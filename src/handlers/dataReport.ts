@@ -1,14 +1,16 @@
 import net from 'net';
-import { ParsedPacket } from '../protocol/types';
+import { ParsedPacket, WsEvent, TagUpdateEvent } from '../protocol/types';
 import { logger } from '../utils/logger';
 import { deviceManager } from '../statemachine/deviceManager';
 import { buildResponse } from '../protocol/parser';
 import { RES } from '../protocol/constants';
 import { parseDataPayload } from '../protocol/tlv';
+import { locationEngine } from '../location/engine';
+import { broadcast } from '../websocket/server';
 
 export function handleDataReport(socket: net.Socket, packet: ParsedPacket): void {
-  deviceManager.updateState(packet.deviceId, { 
-    lastHeartbeat: new Date(), 
+  deviceManager.updateState(packet.deviceId, {
+    lastHeartbeat: new Date(),
     connectionState: 'logged-in'
   });
 
@@ -18,7 +20,7 @@ export function handleDataReport(socket: net.Socket, packet: ParsedPacket): void
   if (tags.length > 0) {
     logger.info({ deviceId: packet.deviceId, tagCount: tags.length }, 'Data report received');
   }
-  
+
   for (const tag of tags) {
     logger.debug({
       tagId: tag.tagId,
@@ -26,6 +28,24 @@ export function handleDataReport(socket: net.Socket, packet: ParsedPacket): void
       rssi: tag.rssi,
       isEntering: tag.isEntering,
     }, 'Tag read decoded');
+
+    const position = locationEngine.process(packet.deviceId, tag) ?? undefined;
+
+    const event: WsEvent<TagUpdateEvent> = {
+      type:      'tag:update',
+      deviceId:  packet.deviceId,
+      timestamp: new Date().toISOString(),
+      data: {
+        tagId:          tag.tagId,
+        tagType:        tag.tagType,
+        antennaChannel: tag.antennaChannel,
+        rssi:           tag.rssi,
+        isEntering:     tag.isEntering,
+        eventTime:      tag.eventTime.toISOString(),
+        position,
+      },
+    };
+    broadcast(event);
   }
 
   // Respond with 0x8004 to confirm receipt and avoid retry storms

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Active Reader — Live Tracking</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0e17;
+  color: #c9d1d9;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: #0f1623;
+  border-bottom: 1px solid #1e2736;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-left svg { opacity: 0.8; }
+
+h1 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  color: #e6edf3;
+}
+
+.header-stats {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: #161f2e;
+  border: 1px solid #1e2736;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #8b949e;
+  white-space: nowrap;
+}
+
+.stat-chip span { color: #e6edf3; font-weight: 600; }
+
+#status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+#status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #f85149;
+  flex-shrink: 0;
+}
+
+#status-dot.live {
+  background: #2ea043;
+  box-shadow: 0 0 0 3px rgba(46,160,67,0.2);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(46,160,67,0.2); }
+  50%       { box-shadow: 0 0 0 5px rgba(46,160,67,0.05); }
+}
+
+/* ── Main layout ─────────────────────────────────────────── */
+main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#canvas-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-width: 0;
+}
+
+canvas {
+  border: 1px solid #1e2736;
+  border-radius: 8px;
+  display: block;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+#sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-left: 1px solid #1e2736;
+  display: flex;
+  flex-direction: column;
+  background: #0f1623;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e2736;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sidebar-header h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b949e;
+  font-weight: 600;
+}
+
+.sidebar-count {
+  font-size: 11px;
+  color: #4493f8;
+  font-weight: 700;
+  background: rgba(68,147,248,0.1);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+#tag-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+#tag-list::-webkit-scrollbar { width: 4px; }
+#tag-list::-webkit-scrollbar-track { background: transparent; }
+#tag-list::-webkit-scrollbar-thumb { background: #1e2736; border-radius: 2px; }
+
+.tag-entry {
+  padding: 10px 14px;
+  border-bottom: 1px solid #141c29;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tag-entry:hover { background: #131c2b; }
+.tag-entry.selected { background: rgba(68,147,248,0.07); border-left: 2px solid #4493f8; padding-left: 12px; }
+
+.tag-row1 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.tag-dot-sm {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-id-text {
+  font-weight: 600;
+  font-size: 12px;
+  font-family: 'Consolas', monospace;
+  color: #e6edf3;
+  flex: 1;
+}
+
+.tag-dir {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.tag-dir.entering { color: #2ea043; background: rgba(46,160,67,0.1); }
+.tag-dir.leaving  { color: #f85149; background: rgba(248,81,73,0.1); }
+
+.tag-rssi-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.rssi-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: #1a2233;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rssi-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.rssi-val {
+  font-size: 10px;
+  color: #8b949e;
+  font-family: 'Consolas', monospace;
+  white-space: nowrap;
+  width: 54px;
+  text-align: right;
+}
+
+.tag-meta-row {
+  font-size: 10px;
+  color: #484f58;
+}
+
+.tag-empty {
+  padding: 24px 14px;
+  color: #484f58;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+footer {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  font-size: 10px;
+  color: #484f58;
+  background: #0f1623;
+  border-top: 1px solid #1e2736;
+  flex-shrink: 0;
+}
+
+footer span { color: #6e7681; }
+
+.clear-btn {
+  background: none;
+  border: 1px solid #1e2736;
+  color: #8b949e;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.clear-btn:hover { border-color: #4493f8; color: #4493f8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4493f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49"/><path d="M7.76 7.76a6 6 0 0 0 0 8.49"/>
+      <path d="M20.07 4.93a10 10 0 0 1 0 14.14"/><path d="M3.93 4.93a10 10 0 0 0 0 14.14"/>
+    </svg>
+    <h1>Active Reader</h1>
+  </div>
+
+  <div class="header-stats">
+    <div class="stat-chip">Tags &nbsp;<span id="stat-tags">0</span></div>
+    <div class="stat-chip">Events &nbsp;<span id="stat-events">0</span></div>
+    <div class="stat-chip">Last update &nbsp;<span id="stat-time">—</span></div>
+  </div>
+
+  <div id="status">
+    <div id="status-dot"></div>
+    <span id="status-text">DISCONNECTED</span>
+  </div>
+</header>
+
+<main>
+  <div id="canvas-wrap">
+    <canvas id="map"></canvas>
+  </div>
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <h2>Active Tags</h2>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="clear-btn" id="clear-btn" style="display:none" onclick="clearSelection()">✕ Clear</button>
+        <div class="sidebar-count" id="sidebar-count">0</div>
+      </div>
+    </div>
+    <div id="tag-list"></div>
+  </aside>
+</main>
+
+<footer>
+  Map space: 1000 × 1000 units
+  &nbsp;·&nbsp; Reader at centre (500, 500)
+  &nbsp;·&nbsp; <span id="footer-device">No device</span>
+</footer>
+
+<script>
+// ─── Config ──────────────────────────────────────────────────────────────────
+const WS_URL      = `ws://${location.host}`;
+const MAP_SIZE    = 1000;
+const TAG_TIMEOUT = 60_000;
+const FADE_START  = 30_000;
+const LERP        = 0.10;       // interpolation speed per frame
+const TRAIL_MAX   = 8;          // positions to keep in trail
+const TRAIL_MIN_DIST = 8;       // min map-unit movement before adding trail point
+const PULSE_DURATION = 700;     // ms
+
+const READER = { x: 500, y: 500 };
+const ANTENNAS = [
+  { channel: 1, angle: 0,   beamWidth: 90, label: 'A1', dir: 'E' },
+  { channel: 2, angle: 90,  beamWidth: 90, label: 'A2', dir: 'S' },
+  { channel: 3, angle: 180, beamWidth: 90, label: 'A3', dir: 'W' },
+  { channel: 4, angle: 270, beamWidth: 90, label: 'A4', dir: 'N' },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const tags    = new Map();  // tagId → tag object
+const pulses  = [];         // { x, y, startTime, color }
+let selectedTag  = null;
+let totalEvents  = 0;
+let lastDeviceId = null;
+
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+const canvas  = document.getElementById('map');
+const ctx     = canvas.getContext('2d');
+let CS = 700; // logical canvas size in px — updated by sizeCanvas()
+
+function sizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const avail = Math.min(wrap.clientWidth - 32, wrap.clientHeight - 32);
+  CS = Math.max(300, avail);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = CS * dpr;
+  canvas.height = CS * dpr;
+  canvas.style.width  = CS + 'px';
+  canvas.style.height = CS + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', sizeCanvas);
+sizeCanvas();
+
+function toC(mapX, mapY) {
+  return [(mapX / MAP_SIZE) * CS, (mapY / MAP_SIZE) * CS];
+}
+
+// ─── Tag colour ───────────────────────────────────────────────────────────────
+function tagColor(tagId) {
+  let h = 0;
+  for (let i = 0; i < tagId.length; i++) h = (h * 31 + tagId.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360},75%,62%)`;
+}
+
+function colorWithAlpha(hsl, a) {
+  return hsl.replace('hsl(', 'hsla(').replace(')', `,${a})`);
+}
+
+// ─── RSSI helpers ─────────────────────────────────────────────────────────────
+function rssiStrength(rssi) {
+  // -10 = 100%, -90 = 0%
+  return Math.max(0, Math.min(1, (rssi - (-90)) / 80));
+}
+
+function rssiColor(rssi) {
+  if (rssi > -40) return '#2ea043';
+  if (rssi > -60) return '#d29922';
+  if (rssi > -75) return '#fb8f44';
+  return '#f85149';
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, CS, CS);
+
+  lerpTags();
+  drawGrid();
+  drawDistanceRings();
+  drawAntennaWedges();
+  drawReader();
+  drawTrails();
+  drawPulses();
+  drawTags();
+
+  requestAnimationFrame(draw);
+}
+
+function drawGrid() {
+  ctx.strokeStyle = '#131c2b';
+  ctx.lineWidth = 1;
+  const step = CS / 10;
+  for (let i = 0; i <= 10; i++) {
+    ctx.beginPath(); ctx.moveTo(i * step, 0);  ctx.lineTo(i * step, CS); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * step);  ctx.lineTo(CS, i * step); ctx.stroke();
+  }
+}
+
+function drawDistanceRings() {
+  const [rx, ry] = toC(READER.x, READER.y);
+  ctx.save();
+  ctx.setLineDash([2, 6]);
+  ctx.font = `9px Consolas, monospace`;
+  ctx.textBaseline = 'middle';
+
+  for (const units of [100, 200, 300, 400]) {
+    const r = (units / MAP_SIZE) * CS;
+    ctx.beginPath();
+    ctx.arc(rx, ry, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1a2538';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#2a3852';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${units}`, rx + r + 3, ry);
+  }
+  ctx.restore();
+}
+
+function drawAntennaWedges() {
+  const [rx, ry] = toC(READER.x, READER.y);
+  const wedgeR = (380 / MAP_SIZE) * CS;
+  const rayR   = (310 / MAP_SIZE) * CS;
+  const labelR = (340 / MAP_SIZE) * CS;
+
+  for (const ant of ANTENNAS) {
+    const mid   = (ant.angle * Math.PI) / 180;
+    const start = ((ant.angle - ant.beamWidth / 2) * Math.PI) / 180;
+    const end   = ((ant.angle + ant.beamWidth / 2) * Math.PI) / 180;
+
+    // Wedge fill
+    ctx.beginPath();
+    ctx.moveTo(rx, ry);
+    ctx.arc(rx, ry, wedgeR, start, end);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(68,147,248,0.035)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(68,147,248,0.10)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Centre ray
+    ctx.save();
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(rx, ry);
+    ctx.lineTo(rx + rayR * Math.cos(mid), ry + rayR * Math.sin(mid));
+    ctx.strokeStyle = 'rgba(68,147,248,0.30)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = '#4493f8';
+    ctx.font = 'bold 11px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${ant.label} · ${ant.dir}`,
+      rx + labelR * Math.cos(mid),
+      ry + labelR * Math.sin(mid));
+  }
+}
+
+function drawReader() {
+  const [rx, ry] = toC(READER.x, READER.y);
+
+  // Breathing halo
+  const t = (Math.sin(Date.now() / 700) + 1) / 2;
+  ctx.beginPath();
+  ctx.arc(rx, ry, 12 + t * 6, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(68,147,248,${0.25 - t * 0.15})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Box
+  const s = 11;
+  ctx.fillStyle = '#4493f8';
+  ctx.beginPath();
+  ctx.roundRect(rx - s, ry - s, s * 2, s * 2, 3);
+  ctx.fill();
+
+  // Icon dot
+  ctx.fillStyle = '#0a0e17';
+  ctx.beginPath();
+  ctx.arc(rx, ry, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Label
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('READER', rx, ry - s - 5);
+}
+
+function drawTrails() {
+  const hasSelection = selectedTag !== null && tags.has(selectedTag);
+  for (const [tagId, tag] of tags) {
+    const hist = tag.history;
+    if (hist.length < 2) continue;
+    if (hasSelection && tagId !== selectedTag) continue; // hide other trails when focused
+    for (let i = 1; i < hist.length; i++) {
+      const [ax, ay] = toC(hist[i - 1].x, hist[i - 1].y);
+      const [bx, by] = toC(hist[i].x, hist[i].y);
+      const a = (i / hist.length) * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.strokeStyle = colorWithAlpha(tag.color, a);
+      ctx.lineWidth = hasSelection ? 2.5 : 2;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawPulses() {
+  const now = Date.now();
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    const progress = (now - p.startTime) / PULSE_DURATION;
+    if (progress >= 1) { pulses.splice(i, 1); continue; }
+
+    const [cx, cy] = toC(p.x, p.y);
+    const r = progress * (28 / MAP_SIZE) * CS;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = colorWithAlpha(p.color, (1 - progress) * 0.7);
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function drawTags() {
+  const now = Date.now();
+  const hasSelection = selectedTag !== null && tags.has(selectedTag);
+
+  // Pass 1: non-selected tags (dimmed when something is selected)
+  for (const [tagId, tag] of tags) {
+    if (hasSelection && tagId === selectedTag) continue;
+    const age = now - tag.lastSeen;
+    const opacity = age < FADE_START ? 1 : Math.max(0, 1 - (age - FADE_START) / (TAG_TIMEOUT - FADE_START));
+    if (opacity <= 0) { tags.delete(tagId); continue; }
+    drawTag(tagId, tag, hasSelection ? opacity * 0.12 : opacity, false);
+  }
+
+  // Pass 2: selected tag drawn on top at full brightness
+  if (hasSelection) {
+    const tag = tags.get(selectedTag);
+    if (tag) {
+      const age = now - tag.lastSeen;
+      const opacity = age < FADE_START ? 1 : Math.max(0, 1 - (age - FADE_START) / (TAG_TIMEOUT - FADE_START));
+      drawTag(selectedTag, tag, opacity, true);
+      const [cx, cy] = toC(tag.currentX, tag.currentY);
+      drawInfoCard(cx, cy, tag, selectedTag);
+    }
+  }
+}
+
+function drawTag(tagId, tag, opacity, isSelected) {
+  const [cx, cy] = toC(tag.currentX, tag.currentY);
+  const R = isSelected ? 12 : 8;
+
+  // Animated selection ring
+  if (isSelected) {
+    const t = (Math.sin(Date.now() / 380) + 1) / 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 5 + t * 4, 0, Math.PI * 2);
+    ctx.strokeStyle = colorWithAlpha(tag.color, opacity * (0.35 + t * 0.3));
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Glow
+  const glowR = isSelected ? R * 4 : R * 3;
+  const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+  grd.addColorStop(0, colorWithAlpha(tag.color, opacity * (isSelected ? 0.45 : 0.3)));
+  grd.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+  ctx.fillStyle = grd;
+  ctx.fill();
+
+  // Dot fill
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fillStyle = colorWithAlpha(tag.color, opacity);
+  ctx.fill();
+
+  // Border — solid = entering, dashed = leaving
+  ctx.save();
+  if (!tag.entering) ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(255,255,255,${opacity * (isSelected ? 0.9 : 0.7)})`;
+  ctx.lineWidth = isSelected ? 2 : 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Label
+  ctx.fillStyle = `rgba(230,237,243,${opacity * (isSelected ? 1 : 0.85)})`;
+  ctx.font = isSelected ? `bold 11px Consolas, monospace` : `bold 9px Consolas, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(isSelected ? tagId : tagId.slice(-4), cx, cy - R - 3);
+}
+
+function drawInfoCard(cx, cy, tag, tagId) {
+  const PAD = 10, LINE = 17, W = 155;
+  const lines = [
+    { text: tagId,                                              color: '#e6edf3', bold: true },
+    { text: `RSSI    ${tag.rssi} dBm`,                         color: rssiColor(tag.rssi)   },
+    { text: `Antenna  ${tag.antenna} (${['','E','S','W','N'][tag.antenna] ?? '?'})`, color: '#8b949e' },
+    { text: tag.entering ? '↑  Entering range' : '↓  Leaving range',
+      color: tag.entering ? '#2ea043' : '#f85149'                                            },
+  ];
+  const H = lines.length * LINE + PAD * 2;
+
+  // Position above tag, flip below if near top edge
+  let bx = cx - W / 2;
+  let by = cy - 12 - H - 14;
+  bx = Math.max(4, Math.min(CS - W - 4, bx));
+  if (by < 4) by = cy + 12 + 14;
+
+  // Background
+  ctx.fillStyle = 'rgba(10,14,23,0.94)';
+  ctx.beginPath();
+  ctx.roundRect(bx, by, W, H, 6);
+  ctx.fill();
+
+  // Coloured left accent strip
+  ctx.fillStyle = tag.color;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, 3, H, [6, 0, 0, 6]);
+  ctx.fill();
+
+  // Card border
+  ctx.strokeStyle = colorWithAlpha(tag.color, 0.35);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, W, H, 6);
+  ctx.stroke();
+
+  // Text
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    ctx.font = l.bold ? `bold 11px Consolas, monospace` : `10px Consolas, monospace`;
+    ctx.fillStyle = l.color;
+    ctx.fillText(l.text, bx + PAD + 4, by + PAD + i * LINE);
+  }
+}
+
+function lerpTags() {
+  for (const tag of tags.values()) {
+    tag.currentX += (tag.targetX - tag.currentX) * LERP;
+    tag.currentY += (tag.targetY - tag.currentY) * LERP;
+  }
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function updateSidebar() {
+  const list   = document.getElementById('tag-list');
+  const now    = Date.now();
+  const active = [...tags].filter(([, t]) => now - t.lastSeen < TAG_TIMEOUT);
+
+  document.getElementById('stat-tags').textContent     = active.length;
+  document.getElementById('sidebar-count').textContent  = active.length;
+  document.getElementById('clear-btn').style.display    = selectedTag ? 'block' : 'none';
+
+  if (active.length === 0) {
+    list.innerHTML = `<div class="tag-empty">No tags detected.<br>Waiting for data…</div>`;
+    return;
+  }
+
+  // Sort by RSSI (strongest first)
+  active.sort((a, b) => b[1].rssi - a[1].rssi);
+
+  list.innerHTML = '';
+  for (const [tagId, tag] of active) {
+    const age      = Math.round((now - tag.lastSeen) / 1000);
+    const strength = rssiStrength(tag.rssi);
+    const barColor = rssiColor(tag.rssi);
+    const dirLabel = tag.entering ? '↑ IN' : '↓ OUT';
+    const dirClass = tag.entering ? 'entering' : 'leaving';
+
+    const el = document.createElement('div');
+    el.className = `tag-entry${tagId === selectedTag ? ' selected' : ''}`;
+    el.innerHTML = `
+      <div class="tag-row1">
+        <div class="tag-dot-sm" style="background:${tag.color}"></div>
+        <div class="tag-id-text">${tagId}</div>
+        <div class="tag-dir ${dirClass}">${dirLabel}</div>
+      </div>
+      <div class="tag-rssi-row">
+        <div class="rssi-bar-bg">
+          <div class="rssi-bar-fill" style="width:${Math.round(strength*100)}%;background:${barColor}"></div>
+        </div>
+        <div class="rssi-val" style="color:${barColor}">${tag.rssi} dBm</div>
+      </div>
+      <div class="tag-meta-row">Ant ${tag.antenna} (${['','E','S','W','N'][tag.antenna] ?? '?'}) &nbsp;·&nbsp; ${age === 0 ? 'just now' : age + 's ago'}</div>`;
+
+    el.addEventListener('click', () => {
+      selectedTag = selectedTag === tagId ? null : tagId;
+      updateSidebar();
+    });
+
+    list.appendChild(el);
+  }
+}
+
+setInterval(updateSidebar, 500);
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+const statusDot  = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60)  return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  return Math.floor(s / 3600) + 'h ago';
+}
+
+function connect() {
+  const ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    statusDot.classList.add('live');
+    statusText.textContent = 'LIVE';
+  };
+
+  ws.onclose = () => {
+    statusDot.classList.remove('live');
+    statusText.textContent = 'RECONNECTING…';
+    setTimeout(connect, 2000);
+  };
+
+  ws.onerror = () => ws.close();
+
+  ws.onmessage = (ev) => {
+    let event;
+    try { event = JSON.parse(ev.data); } catch { return; }
+    if (event.type !== 'tag:update') return;
+
+    const { tagId, rssi, antennaChannel, isEntering, position } = event.data;
+    if (!position) return;
+
+    totalEvents++;
+    lastDeviceId = event.deviceId;
+
+    const existing = tags.get(tagId);
+    const color    = existing?.color ?? tagColor(tagId);
+
+    // Trail: add point if tag moved enough
+    const history = existing?.history ?? [];
+    const last    = history[history.length - 1];
+    if (!last || Math.hypot(position.x - last.x, position.y - last.y) >= TRAIL_MIN_DIST) {
+      history.push({ x: position.x, y: position.y });
+      if (history.length > TRAIL_MAX) history.shift();
+    }
+
+    tags.set(tagId, {
+      targetX:  position.x,
+      targetY:  position.y,
+      currentX: existing?.currentX ?? position.x,
+      currentY: existing?.currentY ?? position.y,
+      color,
+      lastSeen: Date.now(),
+      rssi,
+      antenna:  antennaChannel,
+      entering: isEntering,
+      history,
+    });
+
+    pulses.push({ x: position.x, y: position.y, startTime: Date.now(), color });
+
+    // Header stats
+    document.getElementById('stat-events').textContent = totalEvents;
+    document.getElementById('stat-time').textContent   = 'just now';
+    if (lastDeviceId) document.getElementById('footer-device').textContent = lastDeviceId;
+  };
+}
+
+// Tick the "last update" time display
+setInterval(() => {
+  // handled by sidebar loop — only update if no recent message
+}, 5000);
+
+function clearSelection() {
+  selectedTag = null;
+  updateSidebar();
+}
+
+// Click on empty canvas to deselect
+canvas.addEventListener('click', () => {
+  if (selectedTag !== null) clearSelection();
+});
+
+connect();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

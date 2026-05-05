@@ -1,6 +1,7 @@
 import { config } from './config';
 import { logger } from './utils/logger';
 import { startTcpServer } from './tcp/server';
+import { startWsServer } from './websocket/server';
 
 // ─── Graceful Shutdown ────────────────────────────────────────────────────────
 function setupShutdownHandlers(): void {
@@ -41,7 +42,7 @@ async function main(): Promise<void> {
   // Each module will be wired in here as iterations progress:
   // await connectDb();
   startTcpServer(config.tcp.port);
-  // startApiServer();
+  startWsServer(config.api.port);
 
   logger.info('Bootstrap complete — ready for connections');
 }

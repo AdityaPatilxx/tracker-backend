@@ -1,0 +1,12 @@
+{
+  "260329101000085": {
+    "x": 500,
+    "y": 500,
+    "antennas": {
+      "1": { "angle": 0,   "beamWidth": 90 },
+      "2": { "angle": 90,  "beamWidth": 90 },
+      "3": { "angle": 180, "beamWidth": 90 },
+      "4": { "angle": 270, "beamWidth": 90 }
+    }
+  }
+}
