@@ -1,0 +1,2335 @@
+1
+Protocol
+V1.6
+（2017.09.19）
+Active Reader  Positing Base Station Communication
+1Contents
+Contents.........................................................................................................................................................1
+1.Purpose...................................................................................................................................................2
+2.Normativereferences.............................................................................................................................2
+3.Needtoexplain.......................................................................................................................................2
+4.Communicationprocess..........................................................................................................................3
+5.Communicationpacketformat...............................................................................................................5
+5.1Packetformat...........................................................................................................................5
+5.2Messageheader.........................................................................................................................5
+5.3ServiceContent.......................................................................................................................6
+6.Datainteraction.......................................................................................................................................7
+6.1Registered（0x0008/0x8008）..........................................................................................7
+6.2Logon（0x0001/0x8001）....................................................................................................10
+6.3Heartbeat（0x0003/0x8003）..........................................................................................13
+6.4Datareporting（0x0004/0x8004）................................................................................17
+6.5Firmwareupdate（0x000D/0x800D）................................................................................19
+6.6Configurationparameters（0x000A/0x800A）............................................................28
+7.TLVIndex...............................................................................................................................................30
+7.1TLVTypelistandformat..................................................................................................30
+7.2Tagformatdescription......................................................................................................30
+8.ConfigurationParameterFormatDescription......................................................................................30
+9.CommandList........................................................................................................................................30
+10.Checkalgorithm....................................................................................................................................30
+10.1CRC16Checkalgorithm....................................................................................................30
+10.2Checksumalgorithm..........................................................................................................30
+11.appendix................................................................................................................................................30
+11.1Therelationshipbetweenthebatterychargeandthebatteryvoltage.......30Active Reader  Positing Base Station Communication  Protocol V1.6
+21.Purpose
+Thisdocumentmainlyintroducesthecommunicationformatandprecautionsbetween
+platformsoftwaredevelopment.
+2.NormativeReferences
+1)CommonaccessstandardforindustrialIOTequipment.--SHENZHENMARKTRACECO.,LTD
+3.Needtoexplain
+1)
+2)Server:Platformsoftware；
+3)
+4)
+5)
+configuration,etc.Active Reader  Positing Base Station Communication  Protocol V1.6
+Active Reader  and platform direct communication  methods are: GPRS, LAN or other means；
+Terminal / Equipment:  Active Reader ；
+Load Balancing Server: The server that Active Reader  sends the registration  message；
+Load server: The server that Active Reader  sends messages such as login, heartbeat,  data,Active Reader  and platform server, and provides reference  for engineers  to complete Active Reader
+34.COMMUNICATIONPROCESS
+isclient.Thecommunicationisinitiatedbytheclienttotheserver.
+theregistrationissuccessful,youcanlogintotheplatform.Aftertheloginis
+successful,thedatacanbeexchanged.Datainteractionisinitiatedbythedevice,the
+platformresponds.Thefollowingisabusinessprocessdiagram:Active Reader  Positing Base Station Communication  Protocol V1.6
+The communication  uses the "client" - "server" mode, Platform is server and Active Reader
+After Active Reader  power on, you need to submit a registration  application  to the platform.  After
+4
+ExamplesofcommunicationprocessesActive Reader  Positing Base Station Communication  Protocol V1.6
+55.COMMUNICATIONPACKETFORMAT
+5.1Packetformat
+Thecommunicationpacketbetweentheterminalandtheplatformiscomposedoffour
+parts:theStartFlag,theMessageHeader,theServiceContentandtheCheck.Thestart
+flagisfixedto0x55,0xAA.ThecheckistheCRC16checkoftheheaderandtheservice
+content,
+Theformatisasfollows
+Start
+FlagMessageHeader ServiceContent Check
+2Bytes 28Bytes Variablelength 2Bytes
+explanation：
+StartFlag:fixedto0x55,0xAA
+THELENGTHOFTHEPACKETHEADERISFIXEDTO28BYTES;
+THELENGTHOFTHEServiceContentISVARIABLE;
+CheckISINACCORDANCEWITHCRC16CCITTSTANDARD-0X1021(INITIALVALUEIS0XFFFF),check
+ALGORITHMISDESCRIBEDINTHEFOLLOWINGSECTIONS
+。CheckISTHECALCULATIONOFTHEHEADERANDTHEservicecontentPART
+5.2Messageheader
+Thepacketheaderiscomposedofmessagelength,commandcode,protocolversion,
+terminalserialnumber(ordeviceID).Theheaderformatisasfollows:
+MessageHeader（28Bytes）
+SNFieldLength
+(byte)Description
+1Totalmessage
+length2 Containsfromthebeginningitself,untiltheend
+ofthemessage(onlytheheaderandtheservice
+content)
+2Commandcode2 Indicatesthecommandtobeexecutedoranswered,
+suchaslogin,datareporting,update,andsoon.
+3Message
+serialnumber4 0x00000000to0xFFFFFFFF，Thesendertomaintain
+theirownserialnumber,eachsuccessfulActive Reader  Positing Base Station Communication  Protocol V1.6
+6communication,automaticallyadd1.
+4Message
+protocol
+version2
+5Message
+securityflag2 Unencryptedmessagesdefaultto0x0000
+6DeviceID16 16-bitASCIIcode
+explanation：
+totheplatformis0,andthecommandcodethatplatformrespondstotheMR79601atthe
+highestposition1.Forexample,ifthecommandcodeofdeviceinitiatesaregistration
+requesttotheplatformis0x0008,andthecommandcodefortheplatformresponseis0x8008.
+egg：55AA0022000800000000000100003836313639343033343230353839
+3600010178563412A75C
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 22 00 08 000000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+00 00 01 00 00 38 363136
+39 34 30 33 34 32 333538
+dev_id
+(LSB)desc_code
+(H)desc_code
+(L)reg_code
+(MSB)reg_code
+(LSB)
+39 36 00 01 01 78 563212
+crc16(H)crc16(L)
+A7 5C
+amongthem,messageheaderis：00220008000000000001000038363136393430
+333432303538393600
+5.3ServiceContent
+Theservicecontent,accordingtothedifferentcommandcode,containstheservice
+contentisdifferent,thespecificformatlookattheinstructionsbehind.Active Reader  Positing Base Station Communication  Protocol V1.6
+Command code definition  format: The highest bit of the command code sent by the Active Reader
+76.DATAINTERACTION
+Note：
+Whendevicesendmessagetoserver,theservermusthaveacorrespondingresponse,otherwise
+thedevicewillrepeatedlysendthesamemessage.
+6.1Registered（0x0008/0x8008）
+6.1.1Commandframedefinition
+Initiatedbythedevicetotheplatform,thecommandcode:0x0008,platform
+confirmationcode:0x8008.
+Thedevicesendsaregistrationmessagetotheserver(loadbalancingserver)
+Aftertheserverreceives,respondtotheregistrationstatuswiththeloadserver's
+IPandport.
+Note：
+Ifthedeviceregistrationisunsuccessful,theregistrationmessagewillcontinue
+tobesent.
+Theservicecontentofthedeviceregistrationincludesa2-bytedevicetype
+descriptionanda4-byteregistrationcode.Theregistrationcodeiscalculatedbythe
+deviceIDthroughafixedalgorithm.Thespecificalgorithmisdefinedseparatelybythe
+system.
+Commandcode：0x0008
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+Device
+description2Thehighbyteisthedevicetype
+0x01——Datagateway
+0x02——RFIDreader
+0x03——Computer
+Thelowbyteisthedevicemodelcode
+Registration 4Reserved0x01 —— Active ReaderActive Reader  Positing Base Station Communication  Protocol V1.6
+8code
+egg:55AA00220008000000000001000038363136393430333432303538
+393600010178563412A75C
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 22 00 08 000000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+00 00 01 00 00 38 363136
+39 34 30 33 34 32 333538
+dev_id
+(LSB)desc_code
+(H)desc_code
+(L)reg_code
+(MSB)reg_code
+(LSB)
+39 36 00 01 01 78 563212
+crc16(H)crc16(L)
+A7 5C
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0022
+commandcodecmd：0x0008
+Messageserialnumberseq：0x00000000
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（Changetoastring：
+“861694034205896”）
+Servicecontent
+Devicedescriptiondesc_code：0101（devicetype：01IOTgateway，modeltype：
+01）
+Registrationcodereg_code ：78563412
+Check
+crc16 :0xA75C
+6.1.2Platformvalidationpackagedefinition
+Platformvalidationservicecontentincludestheregistrationresultandthecurrent
+realtime,andtheloadserverIPandportassignedtothedevicelogin.
+Validationcode：0x8008
+Servicecontent：
+DatasegmentBytes DescriptionActive Reader  Positing Base Station Communication  Protocol V1.6
+9Registration
+results10x00——Registeredsuccessfully(ifthe
+registrationissuccessful,returntotheload
+serverIPandport)
+0xFE——Registrationcodeerror
+0xFF——Registrationrefused
+Realtime 6YearMonthDayHoursMinutesSeconds,yearis2000
+IPLoadserverIP32Stringtype
+egg：“218.17.157.214”
+Loadtheserver
+port2Unsignedinteger
+Lowbytefirst,highbyteinthepost
+eg:4501
+egg：55AA004580080000000000010000383631363934303334323035
+383936000011010E1116323231382E31372E3135372E32313400000000
+00000000000000000000000000002413B641
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 45 80 08 00 0000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev
+id(MSB)
+00 00 01 00 00 38 36 3136
+39 34 30 33 34 32 33 3538
+dev
+id(LSB)reg_stat
+ustime
+（MSB）
+39 36 00 00 11 01 0E 1116
+time
+（LSB）IP(MSB)…IP(LSB)port(H)port(L)crc16(H)crc16(L)
+32 32 … 00 24 13 B6 41
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0045
+commandcodecmd：0x8008
+Messageserialnumberseq：0x00000000
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Registrationresultsreg_status：00registrationsuccessActive Reader  Positing Base Station Communication  Protocol V1.6
+10Timetime ：11010E111632Thecurrenttimeoftheplatform,
+correspondingtotheyear,month,day,hour,minute,second,
+thestartingtimeis2000(January14,2017,17:22:50)
+LoadserverIP :3231382E31372E3135372E323134000000000000
+000000000000000000000000(“218.17.157.214”)
+Loadserverport:2413is0x1324（Decimalfor4900）（Note:lowbytefirst）
+Check
+crc16 :0xB641
+6.2Logon（0x0001/0x8001）
+Initiatedbythedevicetotheplatform，commandcode:0x0001，platformvalidationcode：
+0x8001。
+Afterthedevicesendsaregistrationmessagetotheloadbalancingserver,theload
+balancingserverissuestheipandportoftheloadserver,Afterreceivingtheipandport
+oftheloadservice,thedevicesendsaloginmessagetotheipandportserver(load
+server).
+Note：
+Ifthedevicefailstologin(withoutreceivingthecorrectresponse),itwill
+send10logonrequestmessages(commandcode0x0001)repeatedly.After10times,thedevice
+willsendaregistrationmessageagaintotheloadbalancingserver.
+6.2.1Commandpackagedefinition
+LoginservicecontentincludesthesoftwareversionnumberofthedeviceandtheCRC16
+checkofthedevice'sconfigurationparameterlist.
+commandcode：0x0001
+Servicecontent：Asshowninthetablebelow
+Datasegment Bytes Description
+softwareversion 2 main-versionnumberandminor-versionnumber
+CRC16checkofthe
+device's
+configuration
+parameter2 TheCRC16checkoftheconfigurationparameter
+list.Theservermaydecidewhetherornotto
+updatetheparametersaccordingly.
+eg:55AA00200001000000000001000038363136393430333432303538
+39360002070269C50CActive Reader  Positing Base Station Communication  Protocol V1.6
+11sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 20 00 01 00 0000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+00 00 01 00 00 38 36 3136
+39 34 30 33 34 32 33 3538
+dev_id
+(MSL)ver
+(H)ver
+(L)parm_crc
+16(H)parm_crc
+16(L)crc16
+(H)crc16
+(L)
+39 36 00 02 07 02 69 C50C
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0020
+commandcodecmd：0x0001
+Messageserialnumberseq：0x00000000
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+softwareversionver ：0207（devicesoftwareversionisV2.7）
+CRC16checkofthedevice'sconfigurationparameter：0269
+Check
+crc16 :0xC50C
+6.2.2Platformvalidationpackagedefinition
+Theplatformvalidationservicecontentincludestheloginresult(1byte)andthe
+currentrealtime
+Validationcode：0x8001
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+Loginresults 10x00——Loginsuccessful,nooperationrequest
+0x02——Theloginissuccessfulandrequiresthe
+firmwaretobeupdated
+0x03——Loginissuccessful,requesttoupload
+devicehardwareinformation
+0x10——TheloginissuccessfulandrequiresActive Reader  Positing Base Station Communication  Protocol V1.6
+12updatingtheuserconfigurationparameters
+0xFE——Loginerror
+0xFF——Loginrefused(thedevicereceivedadeny
+loginmessage,3minuteslatertosenda
+registrationmessage)
+Realtime 6 YearMonthDayHoursMinutesSeconds,year2000
+eg:55AA00238001000000000001000038363136393430333432303538
+3936000011010E11171EF6C5
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 23 80 01 00 0000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+00 00 01 00 00 38 36 3136
+39 34 30 33 34 32 33 3538
+dev_id
+(LSB)login_st
+atustime
+（MSB）
+39 36 00 00 11 01 0E 1117
+time
+（LSB）crc16
+(H)crc16
+(L)
+1E F6 C5
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0023
+commandcodecmd：0x8001
+Messageserialnumberseq：0x00000000
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Loginstatuslogin_status：00（loginsuccessful）
+Realtimetime ：11010E11171Ecorrespondingyear,month,day,hour,
+minute,second,thestartingtimeis2000(January14,2017,
+17:23:30)
+Check
+crc16 :0xF6C5
+ThevalidationpackageofrequestsdeviceupdateActive Reader  Positing Base Station Communication  Protocol V1.6
+13eg2:55AA002380010000000000010000383631363934303334323035
+38393600021101141014227096
+6.3Heartbeat（0x0003/0x8003）
+Initiatedbythedevicetotheplatform，commandcode:0x0003，platvalidationcode：
+0x8003。
+Note：
+Ifthedevicedoesnotreceivethecorrectresponsemessageaftersendingtheheartbeat
+message,itwillsend5timestheheartbeatmessage(commandcode0x0003).After5times,
+thedevicewillsendtheloginmessage(commandcode0x0001)againtotheloadservice.
+6.3.1Commandpackagedefinition
+Theheartbeatservicecontentincludestheworkingstatusofthedevice(2bytes)
+andthecurrentstateofthedevice.
+commandcode：0x0003
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+Deviceworking
+status2FORMATSPECIFICATION：
+Low4byte,connection:：
+The0bit:GPRSconnection，1effective
+The1bit：LANconnection，1effective
+The2bit：reserved
+The3bit：reserved
+The4bit：Tagtransmissionflag，0：transfertagrecordsto
+platform；1：Donottransfertagrecordstotheplatform
+The5bit：Devicepowerfailureflag，为0：devicenormalpower
+supply，1：deviceexternalpowersupplyisdisconnected
+The6～7bit：reserved
+The8～11bit：batteryvoltage，0～10，respectively,
+thereare0to100%oftheelectricity.(Thisfunction
+correspondingrelationshipbetweenbatteryandbattery
+voltagerefertoChapter11)will be achieved in Active Reader  V3.2 or above version, theActive Reader  Positing Base Station Communication  Protocol V1.6
+14The12～15bit：reserved
+eg：
+0001——GPRSconnection,reportedtagdata
+0011——GPRSconnection,donotreporttagdata
+0803——80%GPRSconnection,wiredconnection,report
+tagdata,batterypower80%
+Devicestatus
+2（E-bikeV2.9,V3.0andabove）
+0～7bit：gprssignalstrength,thenormalrange:0~31,
+ifvalueis99,theaccesssignalstrengthfailure
+8～11bit：Packettransmissionmode(onlyonebitvalid)
+8bit：Sendpacketsthroughgprs
+9bit：Sendpacketsoverawirednetwork
+10bit：reserved
+11bit：reserved
+12～15bit：reserved
+eg:
+1101——gprssignalstrength17,sendthisheartbeat
+packetviagprs
+Deviceversion2
+Devicetime 6Year,month,day,hour,minute,second
+eg:55AA00280003000000010001000038363136393430333432303538
+39360000011195020711010E11171DDE46（V2.6,V2.7，V2.8）
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 28 00 03 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+01 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)work_sta
+tus(H)work_sta
+tus(L)parm_crc
+16(H)parm_crc
+16(L)ver(H)ver(L)
+39 36 00 00 01 11 95 02 07
+time
+（MSB）time
+（LSB）crc16
+(H)crc16
+(L)
+11 01 0E 11 17 1D DE 46
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0028Active Reader  Positing Base Station Communication  Protocol V1.6
+15commandcodecmd：0x0003
+Messageserialnumberseq：0x00000001
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+deviceworkstatuswork_status:0001(gprsconnection,reportingtag)
+CRC16checkofthedevice'sconfigurationparameter：1195（Temporarilyunused）
+softwareversionver ：0207（devicesoftwareversionV2.7）
+devicetimetime：11010E11171DRespectively,theyear,month,day,hour,
+minute,second,thestartingtimeis2000(January14,2017,
+17:23:29)）
+Check
+crc16 :0xDEC6
+FollowingheartbeatpackageisV3.2andaboveversion’s
+eg2: 55AA002800030000000300010000383631363934303334323035383936
+000A01100103021106010F2C28BDCE
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0028
+commandcodecmd：0x0003
+Messageserialnumberseq：0x00000003
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+deviceworkstatuswork_status:0A01
+0x0A01：gprsconnection
+Uploadthetagdata
+Externalpowersupplyisnormal
+Batterypoweris10,means100%
+devicestatus ：1001
+0x10:gprssignalstrength,is16
+0x01:gprstransmission
+softwareversionver ：0302（devicesoftwareversionV3.2）
+Devicetimetime ：1106010F2C28Respectively,thecorrespondingyear,
+month,day,hour,minute,second,thestartingtimeis2000
+(June1,2017,15:44:40)Active Reader  Positing Base Station Communication  Protocol V1.6
+16Check
+crc16 :0xBDCE
+6.3.2Platformvalidationpackagedefinition
+Platformvalidationservicecontentincludestheoperationindication(1byte)and
+thecurrentrealtimetime(6bytes,year,month,hour,minute,year2000)
+validationcode：0x8003
+Servicecontent：Asshowninthetablebelow
+Data
+segmentBytes Description
+Operation
+instructio
+ns10x00——Thereisnooperationalindication
+0x02——Requiresupdatingfirmware
+0x03——Resetdevice(devicereceived,donotrespond,
+restartdirectly)
+0x04——Updatetheantennafirmware
+0x05——Getantennainformation(versionandgain)
+0x06——Setdevicetime(afterthedeviceisreceived,set
+thetime,donotrespond)
+0x08——Cleartagdatabuffer(afterthedeviceisreceived,
+cleartagdatabuffer,donotrespond)
+0x10——Requesttoupdatetheuserconfigurationparameters
+(V2.7abovesupports)
+0x11——Getdevicestatus(V2.8andaboveversionsupports)
+0x12——Requesttouploaddevicehardwareinformation
+(V3.1andaboveversionsupports)
+Realtime6year,month,hour,minute,second.yearis2000
+eg:55AA00238003000000010001000038363136393430333432303538
+3936000011010E11171F70FC
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 23 80 03 00 0000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+01 00 01 00 00 38 36 3136
+39 34 30 33 34 32 33 3538
+dev_id
+(LSB)acktime
+（MSB）
+39 36 00 00 11 01 0E 1117
+timecrc16crc16Active Reader  Positing Base Station Communication  Protocol V1.6
+17（LSB）(H) (L)
+1F 70 FC
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0023
+commandcodecmd：0x8003
+Messageserialnumberseq：0x00000001
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Operationinstructionsask ：00Nooperation
+Platformrealtimetime：11010E11171FRespectively,theyear,month,day,hour,
+minute,second,thestartingtimeis2000(January14,2017,
+17:23:31)
+Check
+crc16 :0x70FC
+6.4Datareporting（0x0004/0x8004）
+Initiatedbythedevicetotheplatform，commandcode:0x0004，platvalidationcode：
+0x8004。
+Note：
+Ifthedevicesendsadatamessagebutdoesnotreceivethecorrectresponsemessage
+fromtheplatform,itwillsend5timesdatamessages(commandcode0x0004)
+After5times,itwillsendloginmessagetoloadserver（commandcode0x0001）
+6.4.1Commandpackagedefinition
+ThedatareportingservicecontentincludesseveraldataTLVs
+commandcode：0x0004
+Servicecontent：Asshowninthetablebelow
+Data
+segmentBytes Description
+TLV 2+2+17Tagtype(2Bytes),tagdatalength(2Btyes),tagdata
+(lengthreferenceChapter7TLVindex)Active Reader  Positing Base Station Communication  Protocol V1.6
+18Definedbythespecificdatacontent,thespecific
+formatseeChapter7(labelformatdescription)
+TLV 2+2+17
+……
+TLVstructureisasfollows：
+TLVtype(2bytes)LENGTH(2
+bytes)VALUE(ThelengthisdefinedbyLENGTH）
+eg：55AA004600040000008D0001000038363136393430333432303538
+3936008B0100110120782B6AA42F000000A911010E1326098B01001101
+20EB144A3364000000B811010E132609833F
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 46 00 04 00 0000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+8D 00 01 00 00 38 36 3136
+39 34 30 33 34 32 33 3538
+dev_id
+(LSB)TLV
+(MSB)…TLV
+(MSL)crc16
+(H)crc16
+(L)
+39 36 00 8B 01 … 09 833F
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0046
+commandcodecmd：0x0004
+Messageserialnumberseq：0x0000008D
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+TLVdata ：8B0100110120782B6AA42F000000A911010E1326098B
+0100110120EB144A3364000000B811010E132609There
+aretwotagrecords,thespecificformat,pleaseseeChapter7label
+instructions)
+ThefirstTLVis:8B0100110120782B6AA42F000000A911
+010E132609(asfollows：
+TLVtype：0x8B01RFIDtag
+TLVdatalength：0x0011Active Reader  Positing Base Station Communication  Protocol V1.6
+19TLVdata：0120782B6AA42F000000A911010E1326
+09Theformatisdescribedinthetagdataformat)
+Check
+crc16 :0x833F
+6.4.2Platformvalidationpackagedefinition
+validationcode：0x8004
+Servicecontent：sameasheartbeatservicecontent。
+6.5Firmwareupdate（0x000D/0x800D）
+Thedevicesendsafirmwaredownloadrequesttotheplatform,commandcode:0x000D,
+platformvalidationcode:0x800D.
+Whentheplatformneedstosendnewfirmware(suchashostfirmware,antennafirmware)
+tothedevice,fillinthefirmwareupdateoperationinstructioncodeintheloginpackage,
+heartbeatpacket,andpacketconfirmationpackage.Afterthedevicereceivestheupdate
+operationinstruction,thedevicerequeststhefirmwareupdatetotheplatformwithcommand
+code0x000D.
+6.5.1Commandpackagedefinition
+firmwareupdateincludesupdatehostfirmwareandantennafirmware,servicecontent
+definitionasfollows：
+commandcode：0x000D
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+file_type 10x01——hostfirmware
+0x02——antennafirmware
+Otherfilesarenotyetdefined
+data_type 1maskflag：
+0x00——Applicationfileinformation,includingfile
+version,filename,crc16check,size;
+0x01——Applicationfilecontent,whenthisbitis1,the
+followingtwodatasegments(blocksize/blockserialActive Reader  Positing Base Station Communication  Protocol V1.6
+20number)isvalid;
+0x02——Theupgradeiscomplete(followedby3bytes,
+wherethefirstbyteistheupgradestatus,0x01:theupgrade
+issuccessful,0x00:theupgradefailed;thesecondand
+thirdbytesaretheupgradedversioninformation).
+Blocksize2Thissectionisvalidwhentheapplicationcategoryis"0x01
+-RequestFileContent"Eachpacketcarriesthefileblock
+size,Unit:Byte
+Blockindex2Thissectionisvalidwhentheapplicationcategoryis"0x01
+-RequestFileContent"
+Thefileblocknumberappliedtotheplatform
+1,Applicationfileinformation
+Whenthedevicereceivestheupgradeinstructioncode,itsendstherequestmessageofthe
+upgradefileinformationtotheserver,thatis,theapplicationfileinformation.
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+file_type 10x01——hostfirmware
+0x02——antennafirmware
+Otherfilesarenotyetdefined
+data_type 1maskflag：
+0x00——Applicationfileinformation,includingfile
+version,filename,crc16check,size;
+Reserved 400000000
+eg1：55AA0022000D0000000100010000383631363934303334323035
+383936000100000000005E5E
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 22 00 0D 000000
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+01 00 01 00 00 38 363136
+39 34 30 33 34 32 333538
+dev_id
+(LSB)file_typ
+edata_typ
+eReserved
+(MSB)Reserved
+(LSB)
+39 36 00 01 00 00 000000
+crc16
+(H)crc16
+(L)Active Reader  Positing Base Station Communication  Protocol V1.6
+215E 5E
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0022
+commandcodecmd：0x000D
+Messageserialnumberseq：0x00000001
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Requestupgradefiletypefile_type:01(updatehostfirmware)
+Requestdatatypedata_type:00(Requestupgradefileinformation)
+reservedReserved ：00000000（Temporarilyunused）
+Check
+crc16 :0x5E5E
+1,Applicationfilecontent
+Afterreceivingthecorrectupgradefileinformationfromtheplatform,thedevice
+sendsthe"applicationfilecontent"messagetotheplatform.
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+file_type 10x01——hostfirmware
+0x02——antennafirmware
+data_type 10x01——Applicationfilecontent
+block_size 2Transferblocksizeofupdatefile.Theserveraccording
+tothisvalue,readthesizeoftheblock_sizedatasent
+tothedevice,thelastpacketislessthanblock_size,
+filledwith0.
+TheversionbeforeV2.9is2000(512Bytes)
+V2.9andaboveversionis01DD(477Bytes)
+block_index 2Theblockindexoffile
+eg2：55AA0022000D0000000200010000383631363934303334323035
+3839360001010200000026CD
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)Active Reader  Positing Base Station Communication  Protocol V1.6
+2255 AA 00 22 00 0D 0000 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 3631 36
+39 34 30 33 34 32 3335 38
+dev_id
+(LSB)file_typ
+edata_typ
+eblock_s
+ize(H)block
+_size
+(L)block_
+index(
+H)block_in
+dex(L)
+39 36 00 01 01 02 0000 00
+crc16
+(H)crc16
+(L)
+26 CD
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0022
+commandcodecmd：0x000D
+Messageserialnumberseq：0x00000002
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+requestupdatefiletypefile_type:01(updatehostfirmware)
+requestupdatedatatypedata_type:01(Requesttoupgradethecontentsof
+thefile)
+blocksizeblock_size：0x0200（sendblocksizeofupdatefilecontentis
+0x200Bytes）
+Blockindexblock_index ：0x0000(updateblock0onfile）
+Check
+crc16 :0x26CD
+1，Theupgradeiscomplete
+Afterhostandantennaupdatefiletransferarecompleted,willsendupdate
+successfulmessagetoserver.(V2.7andpreviousversionwillsendthismessageonly
+antennaupdatesuccess.
+DatasegmentBytes Description
+file_type 10x01——hostfirmware
+0x02——antennafirmware
+data_type 10x02——updatecompletedActive Reader  Positing Base Station Communication  Protocol V1.6
+23update_flag 1Usedtomarkwhethertheupgradefileisreceived
+correctlybythedevice
+00:Upgradefailed
+01:updatesuccessed
+update_ver 2Thefirmwareversionaftertheupgrade(V2.8andabove
+versionsupportsthisfunction)
+eg:
+0209：updatedfirmwareisV2.9
+reserved 1
+eg3:55AA0022000D0000005E000100003836313639343033343230
+353839360001020102080005C6
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 22 00 0D 0000 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+5E 00 01 00 00 38 3631 36
+39 34 30 33 34 32 3335 38
+dev_id
+(LSB)file_typ
+edata_typ
+eupdate_
+flagupdat
+e_ver
+(MSB)update
+_ver
+(LSB)Reserved
+39 36 00 01 02 01 02 08 00
+crc16
+(H)crc16
+(L)
+05 C6
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x0028
+commandcodecmd：0x000D
+Messageserialnumberseq：0x0000005E
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+requestupdatefiletypefile_type:01(updatehostfirmware)
+requestupdatedatatypedata_type :02(updatecompleted)Active Reader  Positing Base Station Communication  Protocol V1.6
+24Upgradethereceptioncompletionflagupdate_flag:01（Receivetheupgradefile
+successfully）
+updatedfirmwareversionupdate_ver:0208（Theversionoftheupgradefilereceived
+isV2.8）
+ReserveReserved :00(reserve）
+Check
+crc16 :0x05C6
+6.5.2Platformvalidationpackagedefinition
+Platformvalidationservicecontentbasedoncontentapplication
+validationcode：0x800D
+Servicecontent：Asshowninthetablebelow
+DatasegmentBytes Description
+data_type 10x01——Hostfilebasicinformation
+0x02——Hostfilecontentdata
+0x03——Antennafilebasicinformation
+0x04——Antennafilecontentdata
+0x05——Theupgradefileends
+Filebasic
+information16Whenthedatatypeis0x01/0x03,thisdatasegment
+exists
+5bytesfilename,3byteextension,2bytefile
+version,2bytefilecrc16check(reserved),4byte
+filesize
+datalength 2
+data
+1，Responsetoapplicationfileinformation
+Whentheplatformreceivesthe"RequestFileMessage"sentfromthedevice,theinformationofthe
+upgradefileissenttothedevice.
+Servicecontent：Asshowninthetablebelow
+Datasegment Bytes Description
+data_type 10x01——Hostfirmwarefilebasicinformation
+0x03——Antennafirmwarefilebasic
+information
+file_name 5
+file_ext 3
+file_version 2
+file_crc16 2TheoverallCRC16checksumforthebitupgrade
+fileActive Reader  Positing Base Station Communication  Protocol V1.6
+25(SeeChapter9forthecalibrationalgorithm)
+file_size 4 Highbytefirst
+eg1：55AA002D800D0000000100010000383631363934303334323035
+383936000100000000000000000000B58700010AEE5F29
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 2D 80 0D 0000 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+01 00 01 00 00 38 3631 36
+39 34 30 33 34 32 3335 38
+dev_id
+(LSB)data_typ
+efile_nam
+efile_ex
+tfile_
+versi
+onfile_c
+rc16file_siz
+e
+39 36 00 01000000
+00000000000000 B58700010A
+EE
+crc16
+(H)crc16
+(L)
+5F 29
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x002D
+commandcodecmd：0x800D
+Messageserialnumberseq：0x00000001
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+requestupdatefiletypefile_type:01(updatehostfirmware)
+updatefilenamefile_name :0000000000(5Byes,updatefilename)
+Upgradefileextensionfile_ext ：000000（3Byes,Upgradethefile
+extension）
+Upgradethefileversionfile_version：0000 （2Byes,Upgradethefile
+version）
+Upgradefilecrc16checkfile_crc16：B587 (2Byes,Upgradefilecrc16check
+is0xB587）
+Upgradefilesizefile_size ：00010AEE（4Byes,Upgradefilesizeis0x00010AEE）
+CheckActive Reader  Positing Base Station Communication  Protocol V1.6
+26crc16 :0x5F29
+responseapplicationfilecontent
+Whentheplatformreceivesthe"RequestFileContent"messagefromthedevice,thecontentofthe
+upgradefileisissuedaccordingtotheapplicationfileblocksize.
+DatasegmentBytes Description
+data_type 10x02——Hostfirmwarefilecontentdata
+0x04——Antennafirmwarefilecontentdata
+block_size 2Thispackagecontainstheblocksizeoftheupgrade
+filedata
+TheversionbeforeV2.9is2000(512Bytes)
+V2.9andaboveversionis01DD(477Bytes)
+data
+update_datablock_sizeupdatefiledata
+Thedatalengthisdeterminedbyblock_size
+eg2：55AA021F800D0000000200010000383631363934303334323035
+38393600020200F017…113C49
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 02 1F 80 0D 0000 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 3631 36
+39 34 30 33 34 32 3335 38
+dev_id
+(LSB)data_typ
+eblock_si
+ze(H)block_s
+ize(L)update
+_data
+（MSB）…update_da
+ta(LSB)
+39 36 00 01 02 00 F0… 11
+crc16
+(H)crc16
+(L)
+3C 49
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x021F
+commandcodecmd：0x800D
+Messageserialnumberseq：0x00000002
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：Active Reader  Positing Base Station Communication  Protocol V1.6
+2738363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Respondtotherequesteddatatypedata_type:02(Hostfirmwarefilecontents)
+Blocksizeblock_size :0200(2Byes,Theupgradepackagesizeis0x0200)
+Note：
+1. TheversionbeforeV2.9is2000
+(512Bytes)
+2.V2.9andaboveversionis01DD(477Bytes)
+updatefiledataupdate_data：F0…11（Upgradethecontentsofthefile）
+Check
+crc16 :0x3C49
+1. Respondtoupgradecomplete
+Afterthedevicereceivestheupgradefile,itwillsendtheupgradecompletemessage
+totheplatform,Theplatformreceivesaconfirmationmessage.
+DatasegmentBytes Description
+data_type 1 0x05——Theupgradefileends
+eg3：55AA001D800D0000001800010000383631363934303334323035
+38393600054704
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 1D 80 0D 0000 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+18 00 01 00 00 38 3631 36
+39 34 30 33 34 32 3335 38
+dev_id
+(LSB)data_typ
+ecrc16
+(H)crc16
+(L)
+39 36 00 05 47 04
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x001D
+commandcodecmd：0x800D
+Messageserialnumberseq：0x00000018
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000Active Reader  Positing Base Station Communication  Protocol V1.6
+28deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+Responserequestdatatypedata_type:05(Upgradecompleteconfirmation)
+Check
+crc16 :0x4704
+6.6Configurationparameters（0x000A/0x800A）
+Initiatedbythedevicetotheplatform，commandcode:0x000A，platformvalidationcode：
+0x800A。
+Whentheplatformneedstoacquireorconfigurethedeviceparameters,theoperation
+instructionsarefilledintheloginpacket,heartbeatpacket,andpacketresponse.After
+receivingtheoperationinstructioncode,theequipmentsendsthecorrespondingparameter
+informationtotheplatform.
+6.6.1Commandpackagedefinition
+Servicecontentincludesparametertypeandparameters
+commandcode：0x000A
+Servicecontent：Asshowninthetablebelow
+SNData
+segmentBytes Description
+1param_type10x02——reportantennainfo（version，gain,rssi）
+0x10——reportuserparameters(V2.7andaboveversion
+support)
+0x11——reportdevicestatues(V2.8andaboveversion
+support)
+0x12——reportdevicehardwareinfo(V3.1andabove
+versionsupport)
+0x80——reportconfigconfirmation(V2.8andabove
+support)
+2Parametersxwhenthefirstbyteis0x02：
+12Bytes,Correspondstotheversionofthefour
+antennas、gain、rssi
+whenthefirstbyteis0x03：Active Reader  Positing Base Station Communication  Protocol V1.6
+291Byte,1Donotreporttagdata，0reporttagdata
+whenthefirstbyteis0x10：
+182Bytes,Userconfigurationparameters,the
+specificformatdescriptionseeChapter8
+configurationparameterformatdescription
+whenthefirstbyteis0x11：
+106Byte,Thecurrentstatusinformationforthe
+device
+whenthefirstbyteis0x12：
+127Byte,devicehardwareinfo
+whenthefirstbyteis0x80：
+1Byte,1Theconfigurationparametersare
+successful，0:Configurationfailed
+1. Reportantennainfo0x02
+Theantennainformationcontainsthecurrentversionofthe4antennas,gain,andfiltertheRSSI
+threshold.
+Servicecontent：Asshowninthetablebelow
+SN Data
+segmentBytes Description
+1param_type10x02——reportantennainfo
+2ant_fw_ver81to4antennaversioninformation,eachantenna
+versionin2bytes
+IfitisFFFF,itmeansthattheantennaversion
+informationofthechannelisnotread
+3ant_gain41~4antennagain(range0~31)IfitisFF,itmeans
+thattheantennagainofthechannelisnotread
+4ant_rssi41~4antennafilterthreshold(range-1~-128)
+Ifitis01,itmeansthattheRSSIofthechannel
+isnotread
+eg1：55AA002D000A000000020001000038363136393430333432303538
+39360002010601060106FFFF1F1F1FFFA8A8A80183F3
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 2D 00 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_idparam_tyant1_fw_ant1_fwant2_fwant2_fwant3_fwActive Reader  Positing Base Station Communication  Protocol V1.6
+30(LSB)pever(H)_ver(L)_ver(H)_ver(L)_ver(H)
+39 36 00 02 01 06 01 06 01
+ant3_fw
+_ver(L)ant4_fw
+_ver(H)ant4_fw
+_ver(L)ant1_gai
+nant2_gai
+nant3_ga
+inant4_ga
+inant1_rs
+siant2_rs
+si
+06 FF FF 1F 1F 1F FF A8 A8
+ant3_rs
+siant4_rs
+sicrc16
+(H)crc16
+(L)
+A8 01 83 F3
+Startflag
+Startflagsof：0x55AA
+Messageheader
+messagelengthlen：0x002D
+commandcodecmd：0x000A
+Messageserialnumberseq：0x00000002
+protocolversionpro_ver：0x0001(V0.1)
+securityflagseq_flag：0x0000
+deviceIDdev_id：
+38363136393430333432303538393600（changetostring：
+“861694034205896”）
+Servicecontent
+parametertypeparam_type:02(antennainfo)
+antennaversionant_version：010601060106FFFF1to4antennaversion
+information,eachantennaversionin2bytesIfitisFFFF,itmeansthattheantenna
+versioninformationofthechannelisnotread）
+explain：
+antenna1firmware;V1.6
+antenna2firmware;V1.6
+antenna3firmware;V1.6
+Antenna4didnotgetthefirmwareversioninformation.
+antennagainant_gain：1F1F1FFF（1~4antennagain(range0~31)FF,invalid）
+explain:
+antenna1gain:31
+antenna2gain:31
+antenna3gain:31
+antenna4gain:notget
+Antennafiltersignalstrengthant_rssi：A8A8A8011~4antennafilterthreshold(range
+-1~-128)0isnotfilter.1meansthattheRSSIofthechannelisnotread）
+explain:
+antenna1rssi:-88
+antenna2gain:-88
+antenna3gain:-88
+antenna4gain:notget
+Check
+crc16 :0x83F3Active Reader  Positing Base Station Communication  Protocol V1.6
+312. Reportuserconfigurationparameters0x10
+Thebodyofthereport：Asshowninthetablebelow
+ItemData
+segmentThe
+No.of
+bytesDescription
+1Parameter
+type
+param_type10x10——Reportingsystemparameters
+2Parameter182TakeChapter8forthereference.
+eg2:55AA00D3000A00000002000100003836313639343033343230353839
+360010550102090100B40038363136393430333432303538393600000001C0A8
+01C7FFFFFF00C0A8010164003231382E31372E3135372E32313400000000
+000000000000000000000000000024133231382E31372E3135372E323134
+000000000000000000000000000000000000F811002E123C002500000000
+000000000000000000000000000000000000000000000000010601060106
+FFFF104D52373930312D303033433030323500A8A8A8A81F1F1F1F00A1000000
+003047
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 01 0D 00 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pedata
+…crc16
+(H)crc16
+(L)
+39 36 00 10 … 30 47
+StartinglogoStartinglogo
+Startinglogosof：0x55AA
+MessageheaderMessageheader
+len：0x00D3
+cmd：0x000A
+seq：0x00000002
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+IDdev_id：
+38363136393430333432303538393600（Converttostring：
+“861694034205896”）
+ServiceContent
+param_type:10(Userconfigurationparameters)
+data ：（Foraspecificformat,seechapter8forconfigurationparameters）Active Reader  Positing Base Station Communication  Protocol V1.6
+3255 :1.The32bytesintheframe,theparametereigenvalues,readthe
+configurationparameters,fixedto0x55
+01 :2.The33rdbyteintheframe,theworkingmodeis:GPRStransmission,
+andthelabelrecordistransmittedtotheplatform（Fourdefinitions：
+0x01:GPRS0x02:LAN）
+0209 :3.The34thbyteoftheframestarts,firmwareversionV2.9(Themajor
+versionnumber2，ubversion9)
+01 :4.The36thbyteoftheframe,thebuzzerlogo,opensthebuzzer（0x00:
+close，0x01：open）
+00 :5.The37thbyteintheframe,reserved1
+B400 :6.Atthebeginningofthe38thbyteintheframe,thelabelistorefilter
+time0x00B4,whichis180seconds（Lowbyteahead，,highbyteafter），
+TodeterminethetimetoleavethebasestationaboveV3.0
+38363136393430333432303538393600:7.The40bytesintheframe
+start,thedeviceID,”861694034205896”
+0000:8.Atthebeginningofthe56thbyteintheframe,thebasestationstops
+periodicallytoreportthefunctionshutdown（V3.3version）
+01 :9.The58thbyteoftheframe,DHCPenabled（0x00:close，0x01：
+open,forLAN）
+C0A801C7:10.Atthe59thbyteoftheframe,LANlocalIP，192.168.1.199
+FFFFFF00 :11.The63rdbyteoftheframebegins,theLANsubnetmask
+255.255.255.0
+C0A80101:12.The67bytesintheframestart,theLANgateway192.168.1.1
+6400 :13.The71stbyteoftheframebegins,LANlocalIPport0x0064，
+is100（Lowbyteahead,highbyteafter）
+3231382E31372E3135372E32313400000000000000000000000000
+0000000000:14.At73bytesinframe,theIPofGPRSserver1，
+“218.17.157.214”，PlatformIP（Balanceserveraddress）
+F811 :15.The105thbyteoftheframebeginswiththeportofGPRSserver
+1,0x11F8is4600（Lowbyteahead,highbyteafter），Platformport
+3231382E31372E3135372E32313400000000000000000000000000
+0000000000：16.The107thbyteintheframestarts,LANserver1'sIP,
+“218.17.157.214”，PlatformIP（Balanceserveraddress
+F811 :17.Atthebeginningofthe139bytesintheframe,theportofLAN
+server1,0x11F8,is4600（Lowbyteahead,highbyteafter）
+002E123C0025:18.The141stbyteoftheframebegins,LANlocalMACaddress
+00-2E-12-3C-00-25
+000000000000000000000000000000000000000000000000000000
+00:19.The147bytesintheframestartandremain3
+010601060106FFFF:20.The175thbyteoftheframebeginswiththe
+firmwareversionoftheantenna,whichcorrespondstothefirmware
+versionoftheantenna1~4.Eachantennaversionoccupies2bytes,if
+itisFFFF,Indicatesfailuretoreadthemodifiedantennaversion.the
+firmwareversion1~4isthefirmwareversion：V1.6,V1.6,V1.6,（TheActive Reader  Positing Base Station Communication  Protocol V1.6
+33no.4antennareadingfailed,probablyno.4channelwithnoantenna）
+10 :21.Inframe183bytes,GPRSsignalstrength0x10(16)
+4D52373930312D303033433030323500:22.The184thbyteatthe
+beginningoftheframe,thedevicenumber“”
+A8A8A8A8:23.The200bytesoftheframestart,theantenna1,2,3,4rssifilter
+threshold，Namely,respectively,-88dBm,-88dBm,-88dBm,-88dBm
+1F1F1F1F:24.The204bytesoftheframestart,theantenna1,2,3,4gain,thatis,
+respectively31dBm,31dBm,31dBm,31dBm
+00 :25.The208thbyteoftheframe,thebluetoothoutputtagidentifier,
+0x00notoutputthelabel,0x01outputlabel
+A1 :26.209bytesoftheframe,thecommunicationconnectionstatus,0
+xa1:deviceplatform hasbeenestablishedthroughGPRS
+communicationconnection(ifitis0xa2:equipmentandtheplatform
+throughtheLANcommunicationconnections,0xa3:equipmentand
+platformthroughGPRS,LANthetwocommunicationconnection)
+00000000:27.The210bytesintheframestart,reserved4
+Checksum
+crc16 :0x5C66
+3. Reportequipmentstatus0x11
+Usedtoobtainthecurrentstateofthedevice
+Thestyle：asshowninthetablebelow
+Item Datasegment Byte Description
+1param_type 10x11——eportequipmentstatus
+2fw_version 2eg：
+0300——HostfirmwareversionV3.0
+3gprs_ip 32Stringtype
+eg：
+“218.17.157.214”
+4gprs_port 2Lowbyteahead
+5gprs_link_status 10x00——Noconnectiontotheplatform
+0x01——Theplatformhasconnections
+6lan_ip 32Stringtype
+7lan_port 2Lowbyteahead
+8lan_link_status 10x00——Noconnectiontotheplatform
+0x01——Theplatformhasconnections
+9 gprs_bffer_cnt 2Thenumberoftagssenttotheplatformvia
+GPRS
+Lowbyteahead
+10 lan_bffer_cnt 2Numberoftagssenttotheplatformviawire
+Lowbyteahead
+11 tag_filt_cnt 2Thenumberoflabelsusedtofilteror
+pre-judgeActive Reader -003C0025Active Reader  Positing Base Station Communication  Protocol V1.6
+34Lowbyteahead
+12 ant_fw_version 8Theversioninformationof1~4antenna,
+theversioninformationofeachantenna
+occupies2bytes
+Theversioninformationthatisnotreadto
+theantennaisnotreadforFFFF
+13 ant_gain 41~4antennagainSettings
+Valuerange:0～31
+InthecaseofFF,theantennagainisnot
+obtained
+14 ant_rssi 4Rssithresholdsettingforantenna1~4
+antenna
+Rangeofvalues:-1~128(bandsymbol
+single-byte,singedchar)
+At1,therssiisnotobtained
+15gprs_flash_tag_cnt 4Storedinflash,thenumberoftagstobe
+senttotheplatformviaGPRS
+Lowbyteahead
+16lan_flash_tag_cnt 4Storedinflash,readytobesenttothe
+platformbywire.
+Lowbyteahead
+17 flash_log_cnt 4Lowbyteahead
+eg6:55AA0087000A000000030001000038363136393430333432303538
+3936001103003231382E31372E3135372E32313400000000000000000000
+00000000000000002413013231382E31372E3135372E3231340000000000
+00000000000000000000000000251300180018000800FFFFFFFF0106FFFFFFFF
+01FF0101D801000000000000000074000000D9AA
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 1E 00 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+03 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pedatacrc16
+(H)crc16
+(L)
+39 36 00 11 … D9 AA
+StartinglogoStartinglogo
+StartinglogoStartinglogosof：0x55AA
+MessageheaderMessageheader
+len：0x001EActive Reader  Positing Base Station Communication  Protocol V1.6
+35cmd：0x000A
+seq：0x00000003
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+IDdev_id：
+38363136393430333432303538393600（string：
+“861694034205896”）
+ServiceContent
+param_type:111.(Reportequipmentstatus)
+firmware:03002.(HostfirmwareversionV3.0)
+IP :3231382E31372E3135372E32313400000000000000000000
+00000000000000003.(CurrentdeviceGPRSconnectionip，
+“218.17.157.214”)
+IPport:24134.(IPportscurrentlyconnectedtoGPRS，0x1324,Is4900,Lowbyteahead)
+gprsconnectionstatus:01 5.(Thecurrentdeviceisconnectedtotheplatform
+throughGPRS)
+CableconnectionIP :3231382E31372E3135372E3231340000000000
+000000000000000000000000006.(Currentdevicewired
+IP，“218.17.157.214”)
+IPport:25137.(ThecurrentwiredIPport，0x1325,is4901,Lowbyteahead)
+Connectionstatus:00 8.(Thecurrentdevicehasnoconnectionthroughcableand
+platform)
+Gprstagnumber:18009.(ThenumberoftagssenttotheplatformviaGPRSinthecache
+0x0018,Lowbyteahead)
+CableconnectiontagNo.:180010.(Thenumberoftagssenttotheplatformbywireinthe
+cache0x0018,Lowbyteahead)
+Tagfilter:080011.(Thenumberoftagssenttotheplatformbywireinthecache0x0018,
+Lowbyteahead)
+Antfirmware:FFFFFFFF0106FFFF12.(1~4antennaversioninformation,among：
+No.1antennawasnotread
+No.2antennawasnotread
+Theversion3antennaisV1.6
+No.4antennawasnotreadversion)
+Antgainsetting:FFFF01FF13.(1~4antennagainSettings，其中among：
+Antennano.1hasnogainvalue
+Antennano.2hasnogainvalue
+Thegainofantenna3issetto1
+Antennano.4hasnogainvalue)
+rssi:0101D80114.(Rssithresholdsettingforantenna1~4antenna,among：
+No.1antennahasnotbeenreadtorssivalues
+Antennano.2hasnotreadtherssivalue
+Therssiofantenna3antennaissetto0xD8,whichis-40symbol
+single-bytenumber，singedchar
+No.4antennadidnotreadtherssivalue)Active Reader  Positing Base Station Communication  Protocol V1.6
+36Flashgprstagno.:0000000015.(Inflash,thenumberoftagssenttotheplatformvia
+GPRS0x000000,Lowbyteahead)
+flashcabletagNo.:0000000016.(Inflash,thenumberoftagssenttotheplatformvia
+wire0x000000,Lowbyteahead)
+flashlogNo.:7400000017.(Inflash,thenumberoftagssenttotheplatformviawire
+0x000074,Lowbyteahead)
+checksum
+crc16 :0xD9AA
+4. Reportequipmenthardwareinformation0x12
+Equipmenthardwareinformation,currentcommunicationequipmentID,hardwareID,product
+number,GPRSmoduleIMEI,SIMcardCCID,batterypower,externalpoweridentification,etc
+Report:128bytes,thefollowingtable
+ItemDatasegment Bytes Descritption
+1param_type 1 0x12——Reportdevicehardwareinformation
+2cur_device_id 16String,theIDusedinthecurrent
+communicationheader,thelastbyteis0
+3mcu_device_id 16Thestring,thelastbyteis0
+4 product_sn 16Thestring,thelastbyteis0
+5 gprs_imei 16Thestring,thelastbyteis0
+6 sim_ccid 21Thestring,thelastbyteis0
+7battery_level 1 Value:0~10,10represents100%electricity
+8power_link_status 10:externalpowersupplynormal,1:external
+powersupplydisconnect
+9 reserved 40Reserved
+eg7：55AA009C000A00000002000100003836313639343033343230353839
+360012383631363934303334323035383936003433353531303530303343
+30303235004D52373930312D303033433030323500383631363934303334
+32303538393600383938363032623131393136393030303233323900090000
+0000000000000000000000000000000000000000000000000000000000
+00000000000000000000253E
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 01 9C 00 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pedata
+…crc16
+(H)crc16
+(L)Active Reader  Positing Base Station Communication  Protocol V1.6
+3739 36 00 12 … 25 3E
+StartinglogoStartinglogo
+StartinglogoStartinglogosof：0x55AA
+Messageheader
+len：0x009C
+cmd：0x000A
+seq：0x00000002
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+IDdev_id：
+38363136393430333432303538393600（“861694034205896”）
+ServiceContent
+param_type :121.（Reportdevicehardwareinformation)the31stbyteof
+theframe(calculatedfrom0)
+cur_device_id:383631363934303334323035383936002.“861694034205896”
+（Startat32bytesintheframe）
+mcu_device_id:343335353130353030334330303235003.“4355105003C0025”
+（Startat48bytesintheframe）
+product_sn:4D52373930312D303033433030323500
+at64bytesintheframe）
+gprs_imei:383631363934303334323035383936005.“861694034205896”（Start
+at80bytesintheframe）
+sim_ccid:3839383630326231313931363930303032333239006.
+“898602b1191690002329”（Startat96bytesintheframe）
+battery_level:097.Batterypower90%（Startat117bytesintheframe）
+power_link_status:008.Externalpowersupply（Startat118bytesintheframe）
+reserved :000000000000000000000000000000000000000000
+000000000000000000000000000000000000009.
+Startat119bytesintheframe）
+Checksum
+crc16 :0x253E
+5. Confirmationofinformation0x80
+Whentheconfigurationmessageoftheplatformisreceived,suchasconfiguringthe
+userconfigurationparameter,configuringtheantennaparameter,andsoon,thedevice
+willrespondtothefollowingmessagetotheplatform,respondingtotheresultofthe
+configurationparametersoftheplatform.
+Note:afterthedevicerespondstothismessage,itwillberestartedimmediatelyand
+runwiththecorrectparametersconfigured.4. “Active Reader -003C0025”  （StartActive Reader  Positing Base Station Communication  Protocol V1.6
+38Report:thefollowingtable
+ItemDatasegmentbytes Description
+1 param_type 10x80——Reportconfigurationconfirmation
+message(V2.8support)
+2 return_opt 10x01——Configurationparametersuccess
+0x00——Configurationparameterfailed
+eg8:55AA001E000A00000006000100003433353531303330303345303033
+390080014784
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 1E 00 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+06 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pereturn_op
+tcrc16
+(H)crc16
+(L)
+39 36 00 80 01 47 84
+StartinglogoStartinglogo
+Startinglogosof：0x55AA
+Messageheader
+len：0x001E
+cmd：0x000A
+seq：0x00000006
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+dev_id：
+38363136393430333432303538393600（转为字符串为Convert
+tostring：“861694034205896”）
+ServiceContentServiceContent
+param_type :80PlatformconfirmationmessageTheconfigurationparameters
+havebeenreceivedforthedeviceplatform)
+return_opt:01Configurationparametersuccess
+checksum
+crc16 :0x4784Active Reader  Positing Base Station Communication  Protocol V1.6
+396.6.2platformvalidationpackagedefinition
+Aftertheplatformreceivesthemessageofconfigurationparameterssentonthedevice
+(thecommandcodeis0x000A),configuretheconfigurationmessage,suchasthe
+configurationparametersystemparameter,configurationantennaparameter,andsoon,as
+needed.
+ServiceContent:Containsparametertypesandparameters
+Confirmationcode：0x800A
+ServiceContent：Thefollowingtable
+ItemData
+segmentbytes Description
+1Type 10x02:gain,rssiConfigureantennagain,rssi
+0x10:Configureuserparameters(V2.7support)
+0x80:Platformconfirmationmessage(V2.8support)
+2Parameterxhefirstbyteis0x02
+8BytesantennagainandRSSI
+Thefirstbyteis0x10
+182Bytes,userconfigurationparameters
+Thefirstbyteis0x80:
+1Byte,1:theplatformreceivedtheconfiguration
+parametersuccess;Zero:
+1. Settheantennaparameter0x02
+GaingainforconfiguringtheantennatofiltertheRSSIthreshold.
+ServiceContent：Thefollowingtable
+ItemData
+segmentbytes Description
+1param_type10x02——Reportedantennainformation
+2ant_gain4Gainofantenna1~4(range0~31)
+IfitisFF,itindicatesthattheantennagainis
+notreadtothechannel
+3ant_rssi41~4antennafilterthresholdvalue(range-1~128)
+Ifitis01,itindicatesthattheantennaisnotread
+tothechannelRSSI
+eg3：55AA0025800A00000002000100003836313639343033343230353839
+3600021F1F1F1FA8A8A8A8C488
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seqActive Reader  Positing Base Station Communication  Protocol V1.6
+40(MSB)
+55 AA 00 25 80 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+peant1_gai
+nant2_ga
+inant3_ga
+inant4_ga
+inant1_rs
+si
+39 36 00 02 1F 1F 1F 1F A8
+ant2_rs
+siant3_rs
+siant4_rs
+sicrc16
+(H)crc16
+(L)
+A8 A8 A8 C4 88
+Startinglogo
+Startinglogosof：0x55AA
+Messageheader
+len：0x002D
+cmd：0x800A
+seq：0x00000002
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+dev_id：
+38363136393430333432303538393600（Converttostring：
+“861694034205896”）
+ServiceContent
+param_type:02(Setantennainformation)
+ant_gain：1F1F1F1F（Thegainof1~4oftheantennaisrespectively
+correspondingtotherangeof0~31）
+analysis
+Antenna1gain:31
+Antenna2gain:31
+Antenna3gain:31
+Antenna4gain:31
+ant_rssi：A8A8A8A8（Thefilterthresholdofthesignalstrengthoftheantenna
+1~4isrespectivelycorrespondingtotherangeofvalue:
+0~-128）
+Analysis
+Antenna1rssi:-88
+Antenna2gain:-88
+Antenna3gain:-88
+Antenna4gain:-88
+Checksum
+crc16 :0xC488Active Reader  Positing Base Station Communication  Protocol V1.6
+412. Setthetransmissionlabeldataidentification
+0x03
+Usedtoconfigurewhetherthedevicereportslabeldatatotheplatform.
+ServiceContent：Thefollowingtable
+ItemDatasegmentbytes Description
+1param_type10x03——Submitthetransmissionlabeldata
+identification
+2Tagno. 100Reportthelabeldatatotheplatform
+01Donotreportthelabeldatatotheplatform
+eg4:55AA001E800A000000030001000038363136393430333432303538
+39360003016ACD
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 1E 80 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+03 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pedatacrc16
+(H)crc16
+(L)
+39 36 00 03 01 6A CD
+Startinglogo
+Startinglogosof：0x55AA
+Messageheader
+len：0x001E
+cmd：0x800A
+seq：0x00000003
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+dev_id：
+38363136393430333432303538393600（Converttostring：
+“861694034205896”）
+ServiceContent
+param_type:03(Reportthelabeldataidentification)
+data ：
+01:Donotreportthelabeldatatotheplatform(0x00
+reportsthelabeldatatotheplatform,0x01doesnotreport
+thelabeldatatotheplatform)
+Checksum
+crc16 :0x6ACDActive Reader  Positing Base Station Communication  Protocol V1.6
+423. Setuserconfigurationparameters0x10
+ServiceContent：Thefollowingtable
+ItemData
+segmentbytes Description
+1param_type10x10——Reportingsystemparameters
+2Parameter182Foraspecificformat,seechapter8,configuration
+parameters
+Note:thedevicewillberestartedafterreceivingthecorrectmessage.
+eg5:55AA00D3800A00000002000100003836313639343033343230353839
+3600105501020701013C0038363136393430333432303538393600000001C0A801C7FF
+FFFF00C0A80102DCFF3231382E31372E3135372E323134000000000000000000000000
+00000000000024134D54494900000000000000000000000000000000000000000000
+0000000000000000236D746932363534363339320000000000000000000000000000
+00000000000000000000000000000000144D52373930312D303033433030323500A8
+A8A8A81F1F1F1F00A1000000000E47
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 01 0D 80 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+02 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pedata
+…crc16
+(H)crc16
+(L)
+39 36 00 10 … 0E 47
+Startinglogosof：0x55AA
+Messageheader
+len：0x00D3
+cmd：0x800A
+seq：0x00000002
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+dev_id：
+38363136393430333432303538393600（Converttostring：
+“861694034205896”）
+ServiceContent
+param_type:10(Userconfigurationparameters)
+data ：（Foraspecificformat,seechapter8forconfigurationparameters）
+55 :1.The32bytesintheframe,theparametereigenvalues,readthe
+configurationparameters,fixedto0x55Active Reader  Positing Base Station Communication  Protocol V1.6
+4301 :2.Theworkingmodeisthe33rdbyteintheframe,whichis
+transmittedbyGPRS,andthelabelrecordistransmittedtothe
+platform(lowfourdefinitions:0x01:GPRS0x02:LAN).
+0209 :3.The34thbyteoftheframebegins,firmwareversionV2.9(main
+version2,subversion9)
+01 :4.The36thbyteoftheframe,thebuzzerlogo,opensthebuzzer(0x00:
+close,0x01:open)
+00 :5.Inframe37bytes,reseve1
+B400 :6.Atthebeginningofthe38thbyteintheframe,thelabelistorefilter
+time0x00B4,whichis180seconds(LowbyteatthefrontLowbyte
+ahead,highbyte),andaboveV3.0todeterminethetimetoleavethe
+basestation
+38363136393430333432303538393600:7.Startofthe40thbyte
+inframe,deviceID,"861694034205896"
+0000:8.The56thbyteoftheframebegins,andthebasestationstops
+periodicallytoreportthefunctionshutdown(V3.3version).
+01 :9.The58thbyteoftheframe,DHCPenabled(0x00:close,0x01:open,
+applicabletoLAN)
+C0A801C7:10.Atthe59thbyteoftheframe,LANlocalIP,192.168.1.199
+FFFFFF00 :11.Atthebeginningofthe63bytesintheframe,theLAN
+subnetmaskis255.255.255.0
+C0A80101:12.The67thbyteoftheframestarts,andtheLANgatewayis
+192.168.1.1
+6400 :13.Atthebeginningofthe71stbyteintheframe,LANlocalIP
+port0x0064,or100（Lowbyteahead，Highbytebehind）
+3231382E31372E3135372E32313400000000000000000000000000
+0000000000:14.Startof73bytesinframe,IPofGPRSserver1,
+"218.17.157.214",platformIP(balancedserveraddress)
+F811 :15.The105thbyteoftheframebegins,theportofGPRSserver1,
+0x11F8is4600（Lowbyteahead，Highbytebehind）
+3231382E31372E3135372E32313400000000000000000000000000
+0000000000：16.The107thbyteoftheframebegins,LANserver1IP,
+"218.17.157.214",platformIP(balancedserveraddress)
+F811 :17.Startat139bytesinframe,LANserver1port,0x11F8,or4600
+（Lowbyteahead，Highbytebehind）
+002E123C0025:18.Atthestartofthe141bytesintheframe,LANlocalMAC
+address00-2e-12-3c-00-25
+000000000000000000000000000000000000000000000000000000
+00:19.The147bytesintheframestartandreseved3
+010601060106FFFF:20.Firmwareversion175bytesoftheframe,antenna,
+respectivelycorrespondingtothefirmwareversionof1~4antenna
+versionof2bytes,eachantennaforFFFF,saidreadingchangeantenna
+versionfailed.Thefirmwareversion1~4is:V1.6,V1.6,V1.6,no(no4
+antennareadingfailed,maybeno.4channelwithoutantenna)Active Reader  Positing Base Station Communication  Protocol V1.6
+4410 :21.Inframe183bytes,GPRSsignalstrength0x10(16)
+4D52373930312D303033433030323500:22.Startingwiththe184bytesin
+theframe,thedevicenumber"mr791-003c0025"
+A8A8A8A8:23.Atthebeginningofthe200bytesintheframe,therssifilter
+thresholdof1,2,3and4,namely,-88dbm,-88dbm,-88dbm,-88dbm
+1F1F1F1F:24.The204bytesoftheframestart,theantenna1,2,3,4gain,thatis
+31dBm,31dBm,31dBm,31dBm
+00 :25.The208thbyteoftheframe,thebluetoothoutputtagidentifier,
+0x00notoutputthelabel,0x01outputlabel
+A1 :26.209bytesoftheframe,thecommunicationconnectionstatus,0
+xa1:deviceplatform hasbeenestablishedthroughGPRS
+communicationconnection(ifitis0xa2:equipmentandtheplatform
+throughtheLANcommunicationconnections,0xa3:equipmentand
+platformthroughGPRS,LANthetwocommunicationconnection)
+00000000:27.The210bytesintheframestartandreseved4
+checksum
+crc16 :0x0E47
+4. Confirmationoftheplatform0x80
+Theplatformreceivesconfigurationparameterinformationfromthedevice,suchas
+reportuserconfigurationparameter,antennainformation,etc.Usedtoinformthedevice
+platformthatthereportedconfigurationmessagehasbeenreceived.
+ServiceContent：Thefollowingtable
+ItemDatasegmentbytes Description
+1 param_type 10x80——Reportconfigurationconfirmation
+message(V2.8support)
+eg6:55AA001D800A000000030001000038363136393430333432303538
+39360080A6E0
+sof(H)sof(L)len(H)len(L)cmd(H)cmd(L)seq
+(MSB)
+55 AA 00 1D 80 0A 00 00 00
+seq
+(LSB)pro_ver
+(H)pro_ver
+(L)sec_flag
+(H)sec_flag
+(L)dev_id
+(MSB)
+03 00 01 00 00 38 36 31 36
+39 34 30 33 34 32 33 35 38
+dev_id
+(LSB)param_ty
+pecrc16
+(H)crc16
+(L)
+39 36 00 80 A6 E0
+Startinglogo
+Startinglogosof：0x55AAActive Reader  Positing Base Station Communication  Protocol V1.6
+45Messageheader
+len：0x001E
+cmd：0x800A
+seq：0x00000003
+pro_ver：0x0001(V0.1)
+seq_flag：0x0000
+dev_id：
+38363136393430333432303538393600（Converttostring：
+“861694034205896”）
+ServiceContent
+param_type:80Platformconfirmationmessage(forresponsedevice,notification
+deviceplatformhasreceivedconfigurationparameters)
+checksum
+crc16 :0xA6E0Active Reader  Positing Base Station Communication  Protocol V1.6
+467.TLVINDEX
+7.1TLVTypelistandformat
+7.1.1format
+TLV2bytes LENGTH2bytesVALUE
+7.1.2typeindex
+TLVtype TAG LENGTH VALUE
+RFIDitem
+monitor0x8801 16 1byteofsignalstrength+4bytereader
+ID+1bytereaderstate+4bytetagID+
+6bytecollectiontime
+Thereaderstate0isnormaland1is
+removed
+Currenttag
+monitor0x8901 16 1bytesignalstrength+4bytetagID+5
+bytetagsensorinformation+6byte
+acquisitiontime
+Wristband
+tagdata0x8A01 18 1bytesignalstrength+4bytebracelet
+ID+1bytetype+2bytesbytes+6byte
+acquisitiontime+6bytereceptiontime
+tag 0x8B01 17 AntennaChannel(1byte)+tagtype
+(1byte)+ id(4bytes)+sum(1byte)+
+incentiveaddress(2bytes)+voltage
+state(1Bytes)+rssi(1byte)+receive
+time(6bytes)
+Attendance
+tag0x8B02 17 (1byte)+ id(4bytes)+sum(1byte)+
+incentiveaddress(2bytes)+voltage
+state(1Bytes)+rssi(1byte)+receiving
+time(6bytes)
+tageg1：8B0100110120782B6AA42F000000A911010E132609
+TLVtype TAG LENGTH
+8B01 0011 0120782B6AA42F000000A911010E132609
+Theanalysisisasfollows：
+TheTLVtype：0x8B01
+TLVdatalength：0x0011
+TheTLVdata：0120782B6AA42F000000A911010E132609（takethe
+electronictagdataformatspecificationforexample)Active Reader  Positing Base Station Communication  Protocol V1.6
+47Attendancetageg2：8B0200118120782B6AA42F000000A911010E132609
+TLVtype TAG LENGTH
+8B02 0011 8120782B6AA42F000000A911010E132609
+Theanalysisisasfollows：
+TheTLVtype ：0x8B02
+TLVdatalength：0x0011
+TheTLVdata：8120782B6AA42F000000A911010E132609（takethe
+electronictagdataformatspecificationforexample)
+7.1.3descriptionofelectronictagformat
+Electronictag(type0x8B01)(17bytes)
+eg:0120E3AF2232FA000000B211010E132609
+channel
+(1byte)Tagdata
+（10Bytes）time
+(6bytes)
+01 20E3AF2232FA000000B211010E
+132609
+Description:
+01 ：Accesstobasestationstatus/antennaChannelnumber(Channel),thisByte
+Thestateofthebasestation;
+lowdigit4bit(0~3bit):antennanumber,1,2,3,4correspondingto
+theeast,south,west,andnorth4antennas.
+Exitbasestationstatus/antennaChannel
+7bit 6bit 5,4bit 3～0bit
+Basestationstatus:
+1：Readrangefrom
+basestation
+0：Readtherange
+outthebasestationStationstopsign
+1：Basestationfor
+0：It'snotabase
+stationstopreserve Read the tag's
+antenna channel
+number
+0x01,in，Readfromantennano.1
+Note:
+1.Tojudgetheneedforthebasestation,7bitand6bitshouldbe
+consideredsimultaneously.
+2.Whenthebasestationismarkedas1,thebasestationstatusisinvalid.
+20E3AF2232FA000000B2：Pleaserefertochapter7.2forthelabeldata
+11010E132609:Thelabelreceives(reads)time,namelyyear,month,day,hour,minute,
+second,yearisbasedon2000,January14,201719:38:09
+7.1.4Theattendancetagformatdescription
+Theattendancetag(type0x8B02)formatspecification(17bytes).Active Reader  Positing Base Station Communication  Protocol V1.6
+48eg:8120E3AF2232FA000000B211010E132609
+Attendance/an
+tennachannel
+no
+(1byte)tagdata
+（10Bytes）attendancetime
+(6bytes)
+81 20E3AF2232FA000000B2 11010E132609
+81 ：Attendance/antennaChannel;Inthis1Byte,thehighest(8bit)indicatesattendance
+orthecomingout,ofwhich1isinand0isout
+Attendance/antennaChannel
+7bit 6bit 5,4bit 3～0bit
+Signinandoutof
+attendance：
+1：in
+0：outIdentification of
+unilateralattendance
+1： unilateral
+attendance
+0：notunilateral
+attendancereserved Read the tag's
+antenna channel
+number
+0x81，Enterthedoor,readfromtheantennano.1
+Note：
+1.Itisnecessarytoconsiderthe7bitand6bitfortheentryandexit
+2.Whentheunilateralattendancemarkis1,theattendancecheckmarkis
+invalid
+20E3AF2232FA000000B2：Pleaserefertochapter7.2forthelabeldata
+11010E132609:Thelabelreceives(reads)time,namelyyear,month,day,hour,minute,
+second,yearisbasedon2000,January14,201719:38:09
+7.2tagformatdescription
+Thetagdataisfixedto10bytes.Thespecificformatisdefinedasfollows:
+Lenth(Byte
+)
+tagtypetype
+(1Byte)tagID
+(4Bytes）CC
+(1Byte)RSV
+(2Bytes)Status
+(1Byte)version
+(1Byte)
+studentcard0x20UseICcard
+numberChecksum
+offront
+5Btyes
+(frame
+head,
+card
+number)Bit0:low
+pressure
+indication
+(0:normal,
+1: low
+voltage
+)
+Bit4:keyVersi
+onnumber
+Bit7:
+Special
+markelectricbike
+tag0x30Productionbatch
+number+serial
+number,
+productionbatch
+numberisfourActive Reader  Positing Base Station Communication  Protocol V1.6
+49state
+(0:pressthe
+button,
+1:press
+withouta
+button
+)decimalnumber,
+theactualuse
+hexstorageand
+transport,such
+as1708,the
+actual0x170
+x08 serial
+numbertofour
+decimalnumber,
+suchas1012,the
+actualdataof0
+x10and0x12.
+Electricbike
+keycard0x31Productionbatch
+number+flow
+number,rule
+same
+eg:20E3AF2232FA000000B2
+tag type
+（1byte）ID
+（4byte）Checksum
+（1byte）Incentivesto
+address
+（2byte）Low
+pressure
+alarm
+（1byte）RSSI
+（1byte）
+20 E3AF2232 FA 0000 00 B2
+20 ：tagtype,studentcard
+E3AF2232：TagID，
+FA ：20E3AF2232andchecksum(checkalgorithmtoseechapter8calibration
+algorithm)
+0000 ：Motivationaladdress,notmotivational
+00 ：Novoltagealarm(lowvoltageis0x01,normalis00
+B2 ：Signalstrength,-78dbm(symbolsforsinglebyte)Active Reader  Positing Base Station Communication  Protocol V1.6
+508.CONFIGURATIONPARAMETERFORMATDESCRIPTION
+Thefollowingistheconfigurationparameterformatofthedevice(182Bytes).
+ItemData
+segmentbytesRead
+and
+write
+attri
+butetype Description
+1Parameter
+eigenvalue1 R/W valueWhenwriting,keep0x55constant,butnormal
+configurationparameters
+Whenwritten,itisnot0x55,thatis,thefactory
+defaultparameterisrestored
+Whenread,itisfixedat0x55
+2Communicati
+onmode1 R/W valueLow4bits,readonly,transmissionmode:
+1bit:readonly,GPRSconnection,1valid
+No.2bit:read-only,LANconnection,1valid
+3bit:retention
+No.4bit:reservation
+No.5bit:readandwrite,tagtransfermark,0:
+transmittagrecordstotheplatform;1:nolabel
+recordistransmittedtotheplatform
+6-8bit:reservations
+eg：0x11,whichrepresentstheGPRS
+connection,doesnottransmittagrecordsto
+theplatform
+eg:0x01,identifiestheGPRSconnectionand
+transmitsthelabelrecordtotheplatform
+3Firmware
+version2 R valueFirmwareversion,themainversionnumberis
+infront
+eg:0207，V2.7
+4Thebuzzer
+logo1 R/W value 1.Startthebuzzer,0:turnoffthebuzzer
+5 reserved1 1 - -
+6Toheavy
+window
+(leavebase
+stationtojudge
+time)2 R/W value20～65535TABtorefilterwindow,unit:second;
+0x0000doesnotfilter,Lowbyteatthefront
+Lowbyteahead,highbyteintheback
+Range:20~65535
+7 DeviceID 16 R/W stringThe15bitisproductserialnumberItemisASCII,
+followedby1byteat0x00
+eg:“861694034205896”
+8 Thebase 2 R/W value ThetagstaysatthebasestationandisreportedActive Reader  Positing Base Station Communication  Protocol V1.6
+51stationstays
+overtimetotheplatformattheintervaltime(theV3.3
+versiononlyhasthis)lowbytebeforeandafter
+highbyte
+Unit:second
+Valuerange:0,60~65535
+0:donotusethisfeature
+60~65535:timeoutperiod
+9 DHCPable 1 R/W value 1：open,0:closed,forLAN
+10 LANlocalIP 4 R/W value UsedforLANnetworkparameterconfiguration
+11 LANMask 4 R/W value UsedforLANnetworkparameterconfiguration
+12 LANgateway 4 R/W value UsedforLANnetworkparameterconfiguration
+13 LANlocalport 2 R/Wvalue LocalIPport,applicabletoLAN,lowbyte
+before,highbyteafter(valuerange0~65536)
+eg:2413,is0x1324(HEX)=4900(DEC)
+14GPRSserver1
+IP32 R/W string IPordomainname,string
+15GGPRSserver
+1port2 R/W valuelowbytebefore,highbyteafter(valuerange0~
+65536)
+16LANserver
+1IP32 R/W string IPordomainname,string
+17LANserver1
+port2 R/Wvalue lowbytebefore,highbyteafter(valuerange0~
+65536)
+18 LANlocalmac 6 R/W value UsedforLANnetworkparameterconfiguration
+19 Reserved3 28 - - -
+20Antenna
+version8 Rvalue hefirmwareversioncorrespondingtofour
+antennas
+Theversionofeachantennaoccupiestwobytes
+eg：0106isV1.6,ifFFFFindicatesthatthe
+readantennaversionfailed(probablynot
+connectedtotheantenna)
+21 GPRSrssi 1 Rvalue 00or99meansGPRSnosignal
+99indicatesfailuretoreadtheGPRSsignal
+Thenormalrangeis0~31
+22 DeviceID 16 R string eg:
+23AntennaRSSI
+threshold4 R/WSigned
+valueValuerange:-1~-128
+ThesignalstrengthRSSIfilterthresholdof1,2,3
+and4correspondingtotheantennais
+respectively.
+eg:-88
+24 Antennagain 4 R/W valueThevaluerangeis0~31,correspondingtothe
+signalgainvalueoftheantenna1,2,3and4
+25Bluetooth
+outputlabel
+identification1 R/W value0:thelabelcannotbeexportedviabluetooth
+1:thelabelcanbeexportedviabluetooth,and
+thetagthattheantennareadswillonlybe“Active Reader -003C0025”Active Reader  Positing Base Station Communication  Protocol V1.6
+52exportedviabluetooth.GPRSandLANare
+forbiddentoexportlabels
+26Communicate
+status1 R valueDirectconnectiontotheplatform
+Low4bits,connectionmode
+1bit:readonly,GPRSconnection,1valid
+No.2bit:read-only,LANconnection,1valid
+3bit:retention
+No.4bit:reservation
+It's4digitshigh,fixedasA
+0xa0connectionless
+0xA1hasGPRSconnections
+0xA2hasaLANconnection
+0xA3hasGPRS,LANconnections
+27 Reserved4 4 - -
+9.SUMMARYOFTHECOMMANDS
+Item cmd Description
+1 0x0008Terminalregistrationrequest
+2 0x8008Platformconfirmationterminalregistration
+3 0x0001Terminalloginrequest
+4 0x8001Theplatformconfirmstheterminallogin
+5 0x0003Terminalheartbeat
+6 0x8003Platformconfirmheartbeat
+7 0x0004Theterminalsendsthetagdata
+8 0x8004Theplatformacknowledgesreceiptofthetag
+9 0x000DToupgradethefirmware
+10 0x800DPlatformtoconfirmupgradefirmwareActive Reader  Positing Base Station Communication  Protocol V1.6
+5310.CHECKSUMALGORITHM
+10.1CRC16ALGORITHM
+Thedatapacketofcommunicationwiththeplatform,usingCRC16algorithm.The
+followingtwokindsofcheckingalgorithmsareintroduced,whicharerecommendedusing
+method2.Method2isusedtocheckthetable,whichis8timesfasterthanmethod1
+10.1.1C#.netmethod1
+/******************************************************************************
+**Functionname:crc16_ccitt
+**Descriptions:Cyclicredundancycheck-16（CCITTstandard-0x1021）
+**inputparameters:bufThedatatobechecked
+** lenCheckthelengthofthedata
+**outputparameters:None
+**Returnedvalue:value
+*******************************************************************************/
+uint16_tcrc16_ccitt(uint8_t*buf,uint16_tlen)
+{
+uint16_ti,j;
+uint16_tcrc_reg=0xFFFF;
+uint16_tcrc_val;
+for(i=0;i<len;i++)
+{
+crc_val=buf[i]<<8;
+for(j=0;j<8;j++)
+{
+if(((int16_t)(crc_reg^crc_val))<0)
+crc_reg=(crc_reg<<1)^0x1021;
+else
+crc_reg<<=1;
+crc_val<<=1;
+}
+}
+returncrc_reg;Active Reader  Positing Base Station Communication  Protocol V1.6
+54}
+10.1.2C#.netmethod1Look-uptablemethod
+/******************************************************************************
+**Functionname:CRC16
+**Descriptions:yclicredundancycheck-16（CCITTstandard-0x1021）
+**inputparameters:bufThedatatobechecked
+** lenCheckthelengthofthedata
+**outputparameters:None
+**Returnedvalue:value
+*******************************************************************************/
+constuint16_tcrc16_table[]=//*CRC16CCITT标准-0x1021
+{
+0x0000,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,
+0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef,
+0x1231,0x0210,0x3273,0x2252,0x52b5,0x4294,0x72f7,0x62d6,
+0x9339,0x8318,0xb37b,0xa35a,0xd3bd,0xc39c,0xf3ff,0xe3de,
+0x2462,0x3443,0x0420,0x1401,0x64e6,0x74c7,0x44a4,0x5485,
+0xa56a,0xb54b,0x8528,0x9509,0xe5ee,0xf5cf,0xc5ac,0xd58d,
+0x3653,0x2672,0x1611,0x0630,0x76d7,0x66f6,0x5695,0x46b4,
+0xb75b,0xa77a,0x9719,0x8738,0xf7df,0xe7fe,0xd79d,0xc7bc,
+0x48c4,0x58e5,0x6886,0x78a7,0x0840,0x1861,0x2802,0x3823,
+0xc9cc,0xd9ed,0xe98e,0xf9af,0x8948,0x9969,0xa90a,0xb92b,
+0x5af5,0x4ad4,0x7ab7,0x6a96,0x1a71,0x0a50,0x3a33,0x2a12,
+0xdbfd,0xcbdc,0xfbbf,0xeb9e,0x9b79,0x8b58,0xbb3b,0xab1a,
+0x6ca6,0x7c87,0x4ce4,0x5cc5,0x2c22,0x3c03,0x0c60,0x1c41,
+0xedae,0xfd8f,0xcdec,0xddcd,0xad2a,0xbd0b,0x8d68,0x9d49,
+0x7e97,0x6eb6,0x5ed5,0x4ef4,0x3e13,0x2e32,0x1e51,0x0e70,
+0xff9f,0xefbe,0xdfdd,0xcffc,0xbf1b,0xaf3a,0x9f59,0x8f78,
+0x9188,0x81a9,0xb1ca,0xa1eb,0xd10c,0xc12d,0xf14e,0xe16f,
+0x1080,0x00a1,0x30c2,0x20e3,0x5004,0x4025,0x7046,0x6067,
+0x83b9,0x9398,0xa3fb,0xb3da,0xc33d,0xd31c,0xe37f,0xf35e,
+0x02b1,0x1290,0x22f3,0x32d2,0x4235,0x5214,0x6277,0x7256,
+0xb5ea,0xa5cb,0x95a8,0x8589,0xf56e,0xe54f,0xd52c,0xc50d,
+0x34e2,0x24c3,0x14a0,0x0481,0x7466,0x6447,0x5424,0x4405,
+0xa7db,0xb7fa,0x8799,0x97b8,0xe75f,0xf77e,0xc71d,0xd73c,
+0x26d3,0x36f2,0x0691,0x16b0,0x6657,0x7676,0x4615,0x5634,
+0xd94c,0xc96d,0xf90e,0xe92f,0x99c8,0x89e9,0xb98a,0xa9ab,
+0x5844,0x4865,0x7806,0x6827,0x18c0,0x08e1,0x3882,0x28a3,
+0xcb7d,0xdb5c,0xeb3f,0xfb1e,0x8bf9,0x9bd8,0xabbb,0xbb9a,Active Reader  Positing Base Station Communication  Protocol V1.6
+550x4a75,0x5a54,0x6a37,0x7a16,0x0af1,0x1ad0,0x2ab3,0x3a92,
+0xfd2e,0xed0f,0xdd6c,0xcd4d,0xbdaa,0xad8b,0x9de8,0x8dc9,
+0x7c26,0x6c07,0x5c64,0x4c45,0x3ca2,0x2c83,0x1ce0,0x0cc1,
+0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,
+0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
+};
+uint16_tCRC16(uint8_t*Data,uint16_tLength)
+{
+uint16_tcrc;
+uint8_tda;
+crc=0xFFFF;
+while(Length--!=0)
+{
+da=(uint8_t)(crc/256);
+crc<<=8;
+crc^=crc16_table[da^*Data];
+Data++;
+}
+returncrc;
+}
+10.1.3JAVAMethod
+/**********************************************************************
+*CRC-CCITTstandardJAVA
+*
+*
+*dataInput:bytesofbytesrequiredtoaddvalidation
+*
+*Output:returnsahexadecimalcheckcodeof2bytes
+**********************************************************************/
+privatestaticStringgetCrc(byte[]data){
+intcrc=0xFFFF; //crc
+for(inti=0;i<data.length;i++){
+crc=(data[i]<<8)^crc;
+for(intj=0;j<8;++j){
+if((crc&0x8000)!=0)
+crc=(crc<<1)^0x1021;
+elseActive Reader  Positing Base Station Communication  Protocol V1.6
+56crc<<=1;
+}
+}
+returnInteger.toHexString(crc&0xFFFF).toUpperCase();
+}
+10.2Checksumalgorithm
+Thetagdataisusedandverified.
+10.2.1C#.NETCalculationfunction
+/******************************************************************************
+**Functionname :CheckSum
+**Descriptions :checksum
+**inputparameters:uBuffhedatatobechecked
+** uBuffLenCheckthelengthofthedata
+**outputparameters:None
+**Returnedvalue :value
+*******************************************************************************/
+uint8CheckSum(uint8*uBuff,uint16uBuffLen)
+{
+uint16i;
+uint8uSum=0;
+for(i=0;i<uBuffLen;i++)
+{
+uSum=uSum+uBuff[i];
+}
+uSum=(~uSum)+1;
+returnuSum;
+}
+10.2.2JAVAmethod
+/*********************************************************
+*CheckandJAVAalgorithmsintagdata
+*
+*@paramsendbyteYouneedtocomputethechecksuminterval:1bytetagTYPE+4byte
+tagIDActive Reader  Positing Base Station Communication  Protocol V1.6
+57*
+*@return Calculatethechecksum
+* 20E3AF2232checksum：FA(10dex-6）
+**********************************************************/
+protectedstaticbytesendRcvByteNum(byte[]sendbyte){
+bytesum=0;
+for(inti=0;i<sendbyte.length;i++){
+sum+=sendbyte[i];
+}
+byterebyte=(byte)(~sum+1);
+System.out.println("校验位："+rebyte);
+returnrebyte;
+}
+//Checksumofthecalculatedand20E3AF2232:FA(10is-6)
+publicstaticvoidmain(String[]args){
+byte[]b=newbyte[5];
+b[0]=0x20;
+b[1]=(byte)0xE3;
+b[2]=(byte)0xAF;
+b[3]=0x22;
+b[4]=0x32;
+sendRcvByteNum(b);
+}Active Reader  Positing Base Station Communication  Protocol V1.6
+5811.THEAPPENDIX
+11.1Relationshipbetweenbatterypowerandbattery
+voltage
+message(orintheuploaddevicehardwareinformation)
+Battery
+powerbatteryvoltage
+10 ≥8.00
+9 ≥7.75,＜8.00
+8 ≥7.50,＜7.75
+7 ≥7.25,＜7.50
+6 ≥7.00,＜7.25
+5 ≥6.75,＜7.00
+4 ≥6.50,＜7.75
+3 ≥6.25,＜6.50
+2 ≥6.00,＜6.25
+1 ≥5.75,＜6.00
+0 ＜5.75
+Note
+1.Thebatteryvoltageislessthan5.75V,thatis,whenthebatteryislessthan1,theequipment
+cannotworkproperly；
+2.Whenthebatteryislessthan9,itcanbejudgedthattheexternalpowersupplyhasbeen
+switchedoff(orlostpower).Active Reader  Positing Base Station Communication  Protocol V1.6
+The battery voltage on the Active Reader  is shown as follows in relation to the battery charge in the heartbeat
