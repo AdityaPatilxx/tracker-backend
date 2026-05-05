@@ -1,20 +1,25 @@
 # Active Reader Tracker Backend
 
-A high-performance TCP backend for tracking and visualizing UWB/RFID tags in real-time.
+TypeScript/Node.js backend that interfaces with Active Reader RFID base stations, processes tag detection events, computes approximate positions via RSSI, and streams live updates to a browser map over WebSocket.
 
-## 🚀 Quick Links
-- **[Instruction Manual](file:///c:/Users/ap069/Projects/tracker-backend/instruction.md)**: Getting started, tech stack, and setup.
-- **[Project Roadmap](file:///c:/Users/ap069/Projects/tracker-backend/roadmap.md)**: Current status and future milestones.
-- **[Architecture Guide](file:///c:/Users/ap069/Projects/tracker-backend/architecture.md)**: Internal data flow and component design.
-- **[Protocol Specification](file:///c:/Users/ap069/Projects/tracker-backend/protocol.md)**: Deep dive into the hardware communication protocol.
+## Documentation
 
-## 🛠️ Setup & Development
-1. **Install dependencies**: `npm install`
-2. **Configure environment**: Copy `.env.example` to `.env`.
-3. **Run in development**: `npm run dev`
+| Doc | Contents |
+|-----|----------|
+| [instruction.md](instruction.md) | Setup, environment variables, running the server |
+| [architecture.md](architecture.md) | Component overview and data flow |
+| [protocol.md](protocol.md) | Binary protocol spec — packet format, commands, TLV structure |
+| [location_engine_design.md](location_engine_design.md) | Location engine algorithm, tuning constants, future plans |
+| [frontend.md](frontend.md) | Web UI guide, WebSocket event format, reader config |
+| [roadmap.md](roadmap.md) | Project status and planned work |
 
-## 🎯 Goal
-The primary objective of this project is to interface with Active Reader base stations to track the approximate location of cards/tags and plot them on a real-time map visualization.
+## Quick Start
 
----
-*Built with TypeScript & Bun.*
+```bash
+npm install
+cp .env.example .env   # defaults work out of the box
+npm run dev
+```
+
+- TCP server: `localhost:4600` — Active Reader devices connect here
+- Web UI: `http://localhost:8080` — live tracking map
